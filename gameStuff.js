@@ -1,11 +1,14 @@
 var myGamePieces = [];
 
 function addUser(n) {
-    myGamePieces[n] = new component(30, 30, "green", 100, 120);
+    myGamePieces[n] = new component(n);
+}
+function removeUser(n) {
+    myGamePieces[n] = null;
 }
 
 function startGame() {
-    myGamePieces[socketNumber] = new component(30, 30, "red", 10, 120);
+    myGamePieces[socketNumber] = new component(socketNumber);
     myGamePieces[socketNumber].accY = 0.05;
     myGameArea.start();
 }
@@ -13,8 +16,8 @@ function startGame() {
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.width = 480;
-        this.canvas.height = 270;
+        this.canvas.width = 800;
+        this.canvas.height = 400;
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.interval = setInterval(updateGameArea, 20);
@@ -24,36 +27,49 @@ var myGameArea = {
     }
 }
 
-function component(width, height, color, x, y, type) {
-    this.type = type;
+function component(socketNum) {
+    this.socketNum = socketNum;
     this.score = 0;
-    this.width = width;
-    this.height = height;
+    this.width = 20;
+    this.height = 20;
     this.accX = 0;
     this.accY = 0; 
     this.velX = 0;
-    this.velY = 0; 
-    this.x = x;
-    this.y = y;
+    this.velY = 50;
+    this.x = 0;
+    this.y = 0;
     this.movingLeft = false;
     this.movingRight = false;
     this.jumping = false;
+
+    if(starting_positions[socketNum]){
+        this.x = starting_positions[socketNum];
+    }else{
+        console.log("error 23948567");
+        this.x = 400;
+    }
+
     this.update = function() {
         ctx = myGameArea.context;
-        ctx.fillStyle = color;
+        if(colors[socketNum]){
+            ctx.fillStyle = colors[socketNum];
+        }else{
+            console.log("error 29384567");
+            ctx.fillStyle = "red";
+        }
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
     this.newPos = function() {
-        if(myGamePieces[socketNumber].movingLeft){
+        if(this.movingLeft && !this.movingRight){
             this.velX = -3;
         }
-        if(myGamePieces[socketNumber].movingRight){
+        if(!this.movingLeft && this.movingRight){
             this.velX = 3;
         }
-        if(myGamePieces[socketNumber].movingLeft && myGamePieces[socketNumber].movingRight){
+        if(this.movingLeft && this.movingRight){
             this.velX = 0;
         }
-        if(!myGamePieces[socketNumber].movingLeft && !myGamePieces[socketNumber].movingRight){
+        if(!this.movingLeft && !this.movingRight){
             this.velX = 0;
         }
         //this.velX += this.accX;
@@ -102,7 +118,9 @@ function updateGameArea() {
     myGameArea.clear();
     myGamePieces[socketNumber].newPos();
     for (var i in myGamePieces) {
-        myGamePieces[i].update();
+        if(myGamePieces[i]){
+            myGamePieces[i].update();
+        }
     }
 }
 
@@ -147,4 +165,8 @@ function keysReleased(e) {
     }
  
     e.preventDefault();
-}       
+}
+
+var starting_positions = [ 10, 800-20-10, 400-10, 200-10, 600-10 ];
+var colors = ["black","red","orange","olive","green","blue","purple","fuchsia","teal","aqua"];
+//var CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
