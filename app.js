@@ -30,6 +30,12 @@ io.on('connection', function(socket) {
    socket.on('socketUpdate', function(data) {
       io.sockets.emit('socketUpdate', data);
    });
+   socket.on('socketActionUpdate', function(data) {
+      io.sockets.emit('socketActionUpdate', data);
+   });
+   socket.on('hit', function(data) {
+      io.sockets.emit('hit', data);
+   });
 
    socket.on('disconnect', function () {
       console.log('A user disconnected '+mySocketNumber);

@@ -29,18 +29,20 @@ var myGameArea = {
 
 function component(socketNum) {
     this.socketNum = socketNum;
-    this.score = 0;
     this.width = 20;
     this.height = 20;
+    this.actionWidth = 4;
     this.accX = 0;
     this.accY = 0; 
     this.velX = 0;
+    this.velXMax = 4;
     this.velY = 50;
     this.x = 0;
     this.y = 0;
-    this.movingLeft = false;
-    this.movingRight = false;
     this.jumping = false;
+    this.flying = false;
+    this.action = "";
+    this.actionDirection = "";
 
     if(starting_positions[socketNum]){
         this.x = starting_positions[socketNum];
@@ -59,20 +61,61 @@ function component(socketNum) {
         }
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
+    this.updateActions = function() {
+        ctx = myGameArea.context;
+        if(this.action != ""){
+            if(this.action == "rock"){
+                ctx.fillStyle = "brown";
+            }
+            if(this.action == "paper"){
+                ctx.fillStyle = "grey";
+            }
+            if(this.action == "scissors"){
+                ctx.fillStyle = "blue";
+            }
+            if(this.actionDirection == "up"){
+                ctx.fillRect(this.x, this.y-this.actionWidth, 20, this.actionWidth);
+            }
+            if(this.actionDirection == "down"){
+                ctx.fillRect(this.x, this.y+20, 20, this.actionWidth);
+            }
+            if(this.actionDirection == "left"){
+                ctx.fillRect(this.x-this.actionWidth, this.y, this.actionWidth, 20);
+            }
+            if(this.actionDirection == "right"){
+                ctx.fillRect(this.x+20, this.y, this.actionWidth, 20);
+            }
+        }
+    }
+
     this.newPos = function() {
-        if(this.movingLeft && !this.movingRight){
-            this.velX = -3;
+        if(this.action == "" || this.jumping){
+            if(left && !right){
+                this.accX = -0.5;
+            }
+            if(!left && right){
+                this.accX = 0.5;
+            }
+            if((!left && !right) || (left && right)){
+                if(this.velX > 0){
+                    this.accX = -0.5;
+                }
+                if(this.velX < 0){
+                    this.accX = 0.5;
+                }
+            }
+        }else{
+            if(this.velX > 0){
+                this.accX = -0.5;
+            }
+            if(this.velX < 0){
+                this.accX = 0.5;
+            }
         }
-        if(!this.movingLeft && this.movingRight){
-            this.velX = 3;
+        if(!(this.velX <= this.velXMax && this.velX+this.accX > this.velXMax) && !(this.velX >= -this.velXMax && this.velX+this.accX < -this.velXMax)){
+            this.velX += this.accX;
         }
-        if(this.movingLeft && this.movingRight){
-            this.velX = 0;
-        }
-        if(!this.movingLeft && !this.movingRight){
-            this.velX = 0;
-        }
-        //this.velX += this.accX;
+
         this.velY += this.accY;
         this.x += this.velX;
         this.y += this.velY;
@@ -80,6 +123,8 @@ function component(socketNum) {
         this.hitTop();
         this.hitLeft();
         this.hitRight();
+        this.hitOthersWithAction();
+        this.hitOtherActionsWithAction();
         sendSocketData();
     }
     this.hitBottom = function() {
@@ -89,6 +134,7 @@ function component(socketNum) {
             this.velY = 0;
             this.accY = 0;
             this.jumping = false;
+            this.flying = false;
         }
     }
     this.hitTop = function() {
@@ -112,6 +158,85 @@ function component(socketNum) {
             this.velX = 0;
         }
     }
+    this.hitOthersWithAction = function() {
+        if(this.action!=""){
+            for (var i in myGamePieces) {
+                if(i!=this.socketNumber){
+                    if(myGamePieces[i]){
+                        if(this.actionDirection=="left"){
+                            if(myGamePieces[i].x+20 > this.x-this.actionWidth){
+                                if(myGamePieces[i].x < this.x){
+                                    if(myGamePieces[i].y > this.y-20){
+                                        if(myGamePieces[i].y < this.y+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="right"){
+                            if(myGamePieces[i].x+20 > this.x+20){
+                                if(myGamePieces[i].x < this.x+20+this.actionWidth){
+                                    if(myGamePieces[i].y > this.y-20){
+                                        if(myGamePieces[i].y < this.y+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="up"){
+                            if(myGamePieces[i].y+20 > this.y-this.actionWidth){
+                                if(myGamePieces[i].y < this.y){
+                                    if(myGamePieces[i].x+20 > this.x){
+                                        if(myGamePieces[i].x < this.x+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="down"){
+                            if(myGamePieces[i].y+20 > this.y+20){
+                                if(myGamePieces[i].y < this.y+20+this.actionWidth){
+                                    if(myGamePieces[i].x+20 > this.x){
+                                        if(myGamePieces[i].x < this.x+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    this.hitOtherActionsWithAction = function() {
+
+    }
+}
+
+function getHit(action,dir){
+    myGamePieces[socketNumber].flying = true;
+    if(dir == "left"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX = -25;
+    }
+    if(dir == "right"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX = 25;
+    }
+    if(dir == "up"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+    }
+    if(dir == "down"){
+        myGamePieces[socketNumber].velY = 25;
+        myGamePieces[socketNumber].accY = 0.6;
+    }
 }
 
 function updateGameArea() {
@@ -120,35 +245,136 @@ function updateGameArea() {
     for (var i in myGamePieces) {
         if(myGamePieces[i]){
             myGamePieces[i].update();
+            myGamePieces[i].updateActions();
         }
     }
 }
 
 function jump() {
     if(!myGamePieces[socketNumber].jumping){
-        myGamePieces[socketNumber].jumping = true;
-        myGamePieces[socketNumber].velY -= 15;
-        myGamePieces[socketNumber].accY += 0.6;
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].jumping = true;
+            myGamePieces[socketNumber].velY -= 15;
+            myGamePieces[socketNumber].accY = 0.6;
+        }
     }
 }
- 
+
+function actionAfterMove(){
+    if(rock){
+        rockf();
+    }
+    if(paper){
+        paperf();
+    }
+    if(scissors){
+        scissorsf();
+    }
+}
+
+function rockf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "rock";
+            actionf();
+        }
+    }
+}
+
+function paperf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "paper";
+            actionf();
+        }
+    }
+}
+
+function scissorsf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "scissors";
+            actionf();
+        }
+    }
+}
+
+function actionf(){
+    if(up){
+        myGamePieces[socketNumber].actionDirection = "up";
+    }
+    if(down){
+        myGamePieces[socketNumber].actionDirection = "down";
+    }
+    if(left){
+        myGamePieces[socketNumber].actionDirection = "left";
+    }
+    if(right){
+        myGamePieces[socketNumber].actionDirection = "right";
+    }
+    sendActionSocketData();
+    setTimeout(unaction, 500);
+}
+
+function unaction(){
+    myGamePieces[socketNumber].action = "";
+    myGamePieces[socketNumber].actionDirection = "";
+    sendActionSocketData();
+}
+
+var up = false;
+var down = false;
+var left = false;
+var right = false;
+var rock = false;
+var paper = false;
+var scissors = false;
+
 window.addEventListener("keydown", keysPressed, false);
 window.addEventListener("keyup", keysReleased, false);
 function keysPressed(e) {
     // left
     if (e.keyCode == 37) {
-        myGamePieces[socketNumber].movingLeft = true;
+        left = true;
+        actionAfterMove();
     }
     // right
     if (e.keyCode == 39) {
-        myGamePieces[socketNumber].movingRight = true;
+        right = true;
+        actionAfterMove();
     }
-    // down
+    // up
     if (e.keyCode == 38) {
-      jump();
+        up = true;
+        actionAfterMove();
+        jump();
     }
     // down
     if (e.keyCode == 40) {
+        down = true;
+        actionAfterMove();
+    }
+
+    // a
+    if (e.keyCode == 65) {
+        rock = true;
+        paper = false;
+        scissors = false;
+        rockf();
+    }
+    // s
+    if (e.keyCode == 83) {
+        rock = false;
+        paper = true;
+        scissors = false;
+        paperf();
+    }
+    // d
+    if (e.keyCode == 68) {
+        rock = false;
+        paper = false;
+        scissors = true;
+        scissorsf();
     }
  
     e.preventDefault();
@@ -157,11 +383,32 @@ function keysPressed(e) {
 function keysReleased(e) {
     // left
     if (e.keyCode == 37) {
-        myGamePieces[socketNumber].movingLeft = false;
+        left = false;
     }
     // right
     if (e.keyCode == 39) {
-        myGamePieces[socketNumber].movingRight = false;
+        right = false;
+    }
+    // up
+    if (e.keyCode == 38) {
+        up = false;
+    }
+    // down
+    if (e.keyCode == 40) {
+        down = false;
+    }
+
+    // a
+    if (e.keyCode == 65) {
+        rock = false;
+    }
+    // s
+    if (e.keyCode == 83) {
+        paper = false;
+    }
+    // d
+    if (e.keyCode == 68) {
+        scissors = false;
     }
  
     e.preventDefault();
