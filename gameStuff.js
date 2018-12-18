@@ -62,28 +62,6 @@ function component(socketNum) {
         }
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
-<<<<<<< HEAD
-    this.newPos = function() {
-        if(!rock && !paper && !scissors){
-            if(left && !right){
-                this.velX = -3;
-            }
-            if(!left && right){
-                this.velX = 3;
-            }
-            if(left && right){
-                this.velX = 0;
-            }
-            if(!left && !right){
-                this.velX = 0;
-            }
-        }else{
-            this.velX = 0;
-        }
-
-        //this.velX += this.accX;
-        this.velY += this.accY + this.gravity;
-=======
     this.updateActions = function() {
         ctx = myGameArea.context;
         if(this.action != ""){
@@ -140,19 +118,15 @@ function component(socketNum) {
         }
 
         this.velY += this.accY;
->>>>>>> origin/master
         this.x += this.velX;
         this.y += this.velY;
         this.hitBottom();
         this.hitTop();
         this.hitLeft();
         this.hitRight();
-<<<<<<< HEAD
-=======
         this.hitOthersWithAction();
         this.hitOtherActionsWithAction();
         sendSocketData();
->>>>>>> origin/master
     }
     this.hitBottom = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
@@ -283,13 +257,13 @@ function updateGameArea() {
 
 function jump() {
     if(!myGamePieces[socketNumber].jumping){
-<<<<<<< HEAD
-        myGamePieces[socketNumber].jumping = true;
-        myGamePieces[socketNumber].velY -= 15;
-        //myGamePieces[socketNumber].accY += 0.6;
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].jumping = true;
+            myGamePieces[socketNumber].velY -= 15;
+            myGamePieces[socketNumber].accY = 0.6;
+        }
     }
 }
-
 function checkForColissions(n){
     
     if (myGamePieces[socketNumber].y > myGamePieces[n].y-20) {
@@ -339,11 +313,6 @@ function checkForColissions(n){
                     myGamePieces[socketNumber].xvel = 0;
                 }
             }
-=======
-        if(myGamePieces[socketNumber].action == ""){
-            myGamePieces[socketNumber].jumping = true;
-            myGamePieces[socketNumber].velY -= 15;
-            myGamePieces[socketNumber].accY = 0.6;
         }
     }
 }
@@ -383,16 +352,11 @@ function scissorsf() {
         if(myGamePieces[socketNumber].action == ""){
             myGamePieces[socketNumber].action = "scissors";
             actionf();
->>>>>>> origin/master
         }
     }
 }
 
-<<<<<<< HEAD
-var rock = false;
-var paper = false;
-var scissors = false;
-=======
+
 function actionf(){
     if(up){
         myGamePieces[socketNumber].actionDirection = "up";
@@ -416,17 +380,10 @@ function unaction(){
     sendActionSocketData();
 }
 
->>>>>>> origin/master
 var up = false;
 var down = false;
 var left = false;
 var right = false;
-<<<<<<< HEAD
-=======
-var rock = false;
-var paper = false;
-var scissors = false;
->>>>>>> origin/master
 
 window.addEventListener("keydown", keysPressed, false);
 window.addEventListener("keyup", keysReleased, false);
@@ -434,76 +391,45 @@ function keysPressed(e) {
     // left
     if (e.keyCode == 37) {
         left = true;
-<<<<<<< HEAD
-=======
         actionAfterMove();
->>>>>>> origin/master
     }
     // right
     if (e.keyCode == 39) {
         right = true;
-<<<<<<< HEAD
-=======
         actionAfterMove();
->>>>>>> origin/master
     }
     // up
     if (e.keyCode == 38) {
         up = true;
-<<<<<<< HEAD
-        if(!rock && !paper && !scissors){
-            jump();
-        }
-=======
         actionAfterMove();
         jump();
->>>>>>> origin/master
     }
     // down
     if (e.keyCode == 40) {
         down = true;
-<<<<<<< HEAD
-    }
-
-    // rock
-=======
         actionAfterMove();
     }
 
     // a
->>>>>>> origin/master
     if (e.keyCode == 65) {
         rock = true;
         paper = false;
         scissors = false;
-<<<<<<< HEAD
-    }
-    // paper
-=======
         rockf();
     }
     // s
->>>>>>> origin/master
     if (e.keyCode == 83) {
         rock = false;
         paper = true;
         scissors = false;
-<<<<<<< HEAD
-    }
-    // scissors
-=======
         paperf();
     }
     // d
->>>>>>> origin/master
     if (e.keyCode == 68) {
         rock = false;
         paper = false;
         scissors = true;
-<<<<<<< HEAD
-=======
         scissorsf();
->>>>>>> origin/master
     }
  
     e.preventDefault();
@@ -527,17 +453,7 @@ function keysReleased(e) {
         down = false;
     }
 
-<<<<<<< HEAD
-    // rock
-    if (e.keyCode == 65) {
-        rock = false;
-    }
-    // paper
-    if (e.keyCode == 83) {
-        paper = false;
-    }
-    // scissors
-=======
+
     // a
     if (e.keyCode == 65) {
         rock = false;
@@ -547,7 +463,6 @@ function keysReleased(e) {
         paper = false;
     }
     // d
->>>>>>> origin/master
     if (e.keyCode == 68) {
         scissors = false;
     }
