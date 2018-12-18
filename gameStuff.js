@@ -29,19 +29,21 @@ var myGameArea = {
 
 function component(socketNum) {
     this.socketNum = socketNum;
-    this.score = 0;
     this.width = 20;
     this.height = 20;
+    this.actionWidth = 4;
     this.accX = 0;
     this.accY = 0; 
     this.gravity = 0.6; 
     this.velX = 0;
+    this.velXMax = 4;
     this.velY = 50;
     this.x = 0;
     this.y = 0;
-    this.movingLeft = false;
-    this.movingRight = false;
     this.jumping = false;
+    this.flying = false;
+    this.action = "";
+    this.actionDirection = "";
 
     if(starting_positions[socketNum]){
         this.x = starting_positions[socketNum];
@@ -60,6 +62,7 @@ function component(socketNum) {
         }
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
+<<<<<<< HEAD
     this.newPos = function() {
         if(!rock && !paper && !scissors){
             if(left && !right){
@@ -80,12 +83,76 @@ function component(socketNum) {
 
         //this.velX += this.accX;
         this.velY += this.accY + this.gravity;
+=======
+    this.updateActions = function() {
+        ctx = myGameArea.context;
+        if(this.action != ""){
+            if(this.action == "rock"){
+                ctx.fillStyle = "brown";
+            }
+            if(this.action == "paper"){
+                ctx.fillStyle = "grey";
+            }
+            if(this.action == "scissors"){
+                ctx.fillStyle = "blue";
+            }
+            if(this.actionDirection == "up"){
+                ctx.fillRect(this.x, this.y-this.actionWidth, 20, this.actionWidth);
+            }
+            if(this.actionDirection == "down"){
+                ctx.fillRect(this.x, this.y+20, 20, this.actionWidth);
+            }
+            if(this.actionDirection == "left"){
+                ctx.fillRect(this.x-this.actionWidth, this.y, this.actionWidth, 20);
+            }
+            if(this.actionDirection == "right"){
+                ctx.fillRect(this.x+20, this.y, this.actionWidth, 20);
+            }
+        }
+    }
+
+    this.newPos = function() {
+        if(this.action == "" || this.jumping){
+            if(left && !right){
+                this.accX = -0.5;
+            }
+            if(!left && right){
+                this.accX = 0.5;
+            }
+            if((!left && !right) || (left && right)){
+                if(this.velX > 0){
+                    this.accX = -0.5;
+                }
+                if(this.velX < 0){
+                    this.accX = 0.5;
+                }
+            }
+        }else{
+            if(this.velX > 0){
+                this.accX = -0.5;
+            }
+            if(this.velX < 0){
+                this.accX = 0.5;
+            }
+        }
+        if(!(this.velX <= this.velXMax && this.velX+this.accX > this.velXMax) && !(this.velX >= -this.velXMax && this.velX+this.accX < -this.velXMax)){
+            this.velX += this.accX;
+        }
+
+        this.velY += this.accY;
+>>>>>>> origin/master
         this.x += this.velX;
         this.y += this.velY;
         this.hitBottom();
         this.hitTop();
         this.hitLeft();
         this.hitRight();
+<<<<<<< HEAD
+=======
+        this.hitOthersWithAction();
+        this.hitOtherActionsWithAction();
+        sendSocketData();
+>>>>>>> origin/master
     }
     this.hitBottom = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
@@ -94,6 +161,7 @@ function component(socketNum) {
             this.velY = 0;
             this.accY = 0;
             this.jumping = false;
+            this.flying = false;
         }
     }
     this.hitTop = function() {
@@ -117,6 +185,85 @@ function component(socketNum) {
             this.velX = 0;
         }
     }
+    this.hitOthersWithAction = function() {
+        if(this.action!=""){
+            for (var i in myGamePieces) {
+                if(i!=this.socketNumber){
+                    if(myGamePieces[i]){
+                        if(this.actionDirection=="left"){
+                            if(myGamePieces[i].x+20 > this.x-this.actionWidth){
+                                if(myGamePieces[i].x < this.x){
+                                    if(myGamePieces[i].y > this.y-20){
+                                        if(myGamePieces[i].y < this.y+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="right"){
+                            if(myGamePieces[i].x+20 > this.x+20){
+                                if(myGamePieces[i].x < this.x+20+this.actionWidth){
+                                    if(myGamePieces[i].y > this.y-20){
+                                        if(myGamePieces[i].y < this.y+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="up"){
+                            if(myGamePieces[i].y+20 > this.y-this.actionWidth){
+                                if(myGamePieces[i].y < this.y){
+                                    if(myGamePieces[i].x+20 > this.x){
+                                        if(myGamePieces[i].x < this.x+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(this.actionDirection=="down"){
+                            if(myGamePieces[i].y+20 > this.y+20){
+                                if(myGamePieces[i].y < this.y+20+this.actionWidth){
+                                    if(myGamePieces[i].x+20 > this.x){
+                                        if(myGamePieces[i].x < this.x+20){
+                                            hit(i,this.action,this.actionDirection);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    this.hitOtherActionsWithAction = function() {
+
+    }
+}
+
+function getHit(action,dir){
+    myGamePieces[socketNumber].flying = true;
+    if(dir == "left"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX = -25;
+    }
+    if(dir == "right"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX = 25;
+    }
+    if(dir == "up"){
+        myGamePieces[socketNumber].velY -= 25;
+        myGamePieces[socketNumber].accY = 0.6;
+    }
+    if(dir == "down"){
+        myGamePieces[socketNumber].velY = 25;
+        myGamePieces[socketNumber].accY = 0.6;
+    }
 }
 
 function updateGameArea() {
@@ -128,6 +275,7 @@ function updateGameArea() {
                 checkForColissions(i);
             }
             myGamePieces[i].update();
+            myGamePieces[i].updateActions();
         }
     }
     sendSocketData();
@@ -135,6 +283,7 @@ function updateGameArea() {
 
 function jump() {
     if(!myGamePieces[socketNumber].jumping){
+<<<<<<< HEAD
         myGamePieces[socketNumber].jumping = true;
         myGamePieces[socketNumber].velY -= 15;
         //myGamePieces[socketNumber].accY += 0.6;
@@ -190,17 +339,94 @@ function checkForColissions(n){
                     myGamePieces[socketNumber].xvel = 0;
                 }
             }
+=======
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].jumping = true;
+            myGamePieces[socketNumber].velY -= 15;
+            myGamePieces[socketNumber].accY = 0.6;
         }
     }
 }
 
+function actionAfterMove(){
+    if(rock){
+        rockf();
+    }
+    if(paper){
+        paperf();
+    }
+    if(scissors){
+        scissorsf();
+    }
+}
+
+function rockf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "rock";
+            actionf();
+        }
+    }
+}
+
+function paperf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "paper";
+            actionf();
+        }
+    }
+}
+
+function scissorsf() {
+    if(up || down || left || right){
+        if(myGamePieces[socketNumber].action == ""){
+            myGamePieces[socketNumber].action = "scissors";
+            actionf();
+>>>>>>> origin/master
+        }
+    }
+}
+
+<<<<<<< HEAD
 var rock = false;
 var paper = false;
 var scissors = false;
+=======
+function actionf(){
+    if(up){
+        myGamePieces[socketNumber].actionDirection = "up";
+    }
+    if(down){
+        myGamePieces[socketNumber].actionDirection = "down";
+    }
+    if(left){
+        myGamePieces[socketNumber].actionDirection = "left";
+    }
+    if(right){
+        myGamePieces[socketNumber].actionDirection = "right";
+    }
+    sendActionSocketData();
+    setTimeout(unaction, 500);
+}
+
+function unaction(){
+    myGamePieces[socketNumber].action = "";
+    myGamePieces[socketNumber].actionDirection = "";
+    sendActionSocketData();
+}
+
+>>>>>>> origin/master
 var up = false;
 var down = false;
 var left = false;
 var right = false;
+<<<<<<< HEAD
+=======
+var rock = false;
+var paper = false;
+var scissors = false;
+>>>>>>> origin/master
 
 window.addEventListener("keydown", keysPressed, false);
 window.addEventListener("keyup", keysReleased, false);
@@ -208,40 +434,76 @@ function keysPressed(e) {
     // left
     if (e.keyCode == 37) {
         left = true;
+<<<<<<< HEAD
+=======
+        actionAfterMove();
+>>>>>>> origin/master
     }
     // right
     if (e.keyCode == 39) {
         right = true;
+<<<<<<< HEAD
+=======
+        actionAfterMove();
+>>>>>>> origin/master
     }
     // up
     if (e.keyCode == 38) {
         up = true;
+<<<<<<< HEAD
         if(!rock && !paper && !scissors){
             jump();
         }
+=======
+        actionAfterMove();
+        jump();
+>>>>>>> origin/master
     }
     // down
     if (e.keyCode == 40) {
         down = true;
+<<<<<<< HEAD
     }
 
     // rock
+=======
+        actionAfterMove();
+    }
+
+    // a
+>>>>>>> origin/master
     if (e.keyCode == 65) {
         rock = true;
         paper = false;
         scissors = false;
+<<<<<<< HEAD
     }
     // paper
+=======
+        rockf();
+    }
+    // s
+>>>>>>> origin/master
     if (e.keyCode == 83) {
         rock = false;
         paper = true;
         scissors = false;
+<<<<<<< HEAD
     }
     // scissors
+=======
+        paperf();
+    }
+    // d
+>>>>>>> origin/master
     if (e.keyCode == 68) {
         rock = false;
         paper = false;
         scissors = true;
+<<<<<<< HEAD
+=======
+        scissorsf();
+>>>>>>> origin/master
     }
  
     e.preventDefault();
@@ -265,6 +527,7 @@ function keysReleased(e) {
         down = false;
     }
 
+<<<<<<< HEAD
     // rock
     if (e.keyCode == 65) {
         rock = false;
@@ -274,6 +537,17 @@ function keysReleased(e) {
         paper = false;
     }
     // scissors
+=======
+    // a
+    if (e.keyCode == 65) {
+        rock = false;
+    }
+    // s
+    if (e.keyCode == 83) {
+        paper = false;
+    }
+    // d
+>>>>>>> origin/master
     if (e.keyCode == 68) {
         scissors = false;
     }
