@@ -34,6 +34,7 @@ function component(socketNum) {
     this.height = 20;
     this.accX = 0;
     this.accY = 0; 
+    this.gravity = 0.6; 
     this.velX = 0;
     this.velY = 50;
     this.x = 0;
@@ -60,27 +61,31 @@ function component(socketNum) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
     this.newPos = function() {
-        if(this.movingLeft && !this.movingRight){
-            this.velX = -3;
-        }
-        if(!this.movingLeft && this.movingRight){
-            this.velX = 3;
-        }
-        if(this.movingLeft && this.movingRight){
+        if(!rock && !paper && !scissors){
+            if(left && !right){
+                this.velX = -3;
+            }
+            if(!left && right){
+                this.velX = 3;
+            }
+            if(left && right){
+                this.velX = 0;
+            }
+            if(!left && !right){
+                this.velX = 0;
+            }
+        }else{
             this.velX = 0;
         }
-        if(!this.movingLeft && !this.movingRight){
-            this.velX = 0;
-        }
+
         //this.velX += this.accX;
-        this.velY += this.accY;
+        this.velY += this.accY + this.gravity;
         this.x += this.velX;
         this.y += this.velY;
         this.hitBottom();
         this.hitTop();
         this.hitLeft();
         this.hitRight();
-        sendSocketData();
     }
     this.hitBottom = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
@@ -119,36 +124,124 @@ function updateGameArea() {
     myGamePieces[socketNumber].newPos();
     for (var i in myGamePieces) {
         if(myGamePieces[i]){
+            if(i!=socketNumber){
+                checkForColissions(i);
+            }
             myGamePieces[i].update();
         }
     }
+    sendSocketData();
 }
 
 function jump() {
     if(!myGamePieces[socketNumber].jumping){
         myGamePieces[socketNumber].jumping = true;
         myGamePieces[socketNumber].velY -= 15;
-        myGamePieces[socketNumber].accY += 0.6;
+        //myGamePieces[socketNumber].accY += 0.6;
     }
 }
- 
+
+function checkForColissions(n){
+    
+    if (myGamePieces[socketNumber].y > myGamePieces[n].y-20) {
+        if (myGamePieces[socketNumber].y < myGamePieces[n].y) {
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
+                    console.log("colision on top");
+                    if(myGamePieces[socketNumber].velY>0){
+                        myGamePieces[socketNumber].y = myGamePieces[n].y-20;
+                        myGamePieces[socketNumber].velY = 0;
+                        myGamePieces[socketNumber].accY = 0;
+                        myGamePieces[socketNumber].jumping = false;
+                    }
+                }
+            }
+        }
+    }
+    if (myGamePieces[socketNumber].y > myGamePieces[n].y) {
+        if (myGamePieces[socketNumber].y < myGamePieces[n].y+20) {
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
+                    console.log("colision on bottom");
+                    myGamePieces[socketNumber].y = myGamePieces[n].y+20;
+                    myGamePieces[socketNumber].yvel = -myGamePieces[socketNumber].yvel ;
+                }
+            }
+        }
+    }
+
+    if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
+        if (myGamePieces[socketNumber].x < myGamePieces[n].x) {
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-10) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+10) {
+                    console.log("colision on left");
+                    myGamePieces[socketNumber].x = myGamePieces[n].x-20;
+                    myGamePieces[socketNumber].xvel = 0;
+                }
+            }
+        }
+    }
+    if (myGamePieces[socketNumber].x > myGamePieces[n].x) {
+        if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-10) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+10) {
+                    console.log("colision on right");
+                    myGamePieces[socketNumber].x = myGamePieces[n].x+20;
+                    myGamePieces[socketNumber].xvel = 0;
+                }
+            }
+        }
+    }
+}
+
+var rock = false;
+var paper = false;
+var scissors = false;
+var up = false;
+var down = false;
+var left = false;
+var right = false;
+
 window.addEventListener("keydown", keysPressed, false);
 window.addEventListener("keyup", keysReleased, false);
 function keysPressed(e) {
     // left
     if (e.keyCode == 37) {
-        myGamePieces[socketNumber].movingLeft = true;
+        left = true;
     }
     // right
     if (e.keyCode == 39) {
-        myGamePieces[socketNumber].movingRight = true;
+        right = true;
     }
-    // down
+    // up
     if (e.keyCode == 38) {
-      jump();
+        up = true;
+        if(!rock && !paper && !scissors){
+            jump();
+        }
     }
     // down
     if (e.keyCode == 40) {
+        down = true;
+    }
+
+    // rock
+    if (e.keyCode == 65) {
+        rock = true;
+        paper = false;
+        scissors = false;
+    }
+    // paper
+    if (e.keyCode == 83) {
+        rock = false;
+        paper = true;
+        scissors = false;
+    }
+    // scissors
+    if (e.keyCode == 68) {
+        rock = false;
+        paper = false;
+        scissors = true;
     }
  
     e.preventDefault();
@@ -157,11 +250,32 @@ function keysPressed(e) {
 function keysReleased(e) {
     // left
     if (e.keyCode == 37) {
-        myGamePieces[socketNumber].movingLeft = false;
+        left = false;
     }
     // right
     if (e.keyCode == 39) {
-        myGamePieces[socketNumber].movingRight = false;
+        right = false;
+    }
+    // up
+    if (e.keyCode == 38) {
+        up = false;
+    }
+    // down
+    if (e.keyCode == 40) {
+        down = false;
+    }
+
+    // rock
+    if (e.keyCode == 65) {
+        rock = false;
+    }
+    // paper
+    if (e.keyCode == 83) {
+        paper = false;
+    }
+    // scissors
+    if (e.keyCode == 68) {
+        scissors = false;
     }
  
     e.preventDefault();
