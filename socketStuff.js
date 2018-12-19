@@ -51,6 +51,13 @@ function sendActionSocketData() {
 function sendHealthSocketData() {
     socket.emit('socketHealthUpdate', {number : socketNumber, health : myGamePieces[socketNumber].health});
 };
+function die(){
+    console.log("I died");
+    //socket.emit('death', {number : socketNumber, position : {x:myGamePieces[socketNumber].x,y:myGamePieces[socketNumber].y}});
+    myGamePieces[socketNumber] = new component(socketNumber);
+    sendHealthSocketData();
+    sendActionSocketData();
+}
 
 function hit(i,action,dir,myaction,mydir){
     console.log("hit emit");

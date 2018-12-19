@@ -152,7 +152,7 @@ function component(socketNum) {
             }
             if(this.velY>(notMovingVelocity*2)){
                 this.velY = (restitution*restitution)*(-this.velY);
-                shake(1);
+                //shake(1);
             }else{
                 this.velY = 0;
                 jumping = false;
@@ -168,7 +168,7 @@ function component(socketNum) {
                 return;
             }
             this.velY = restitution*(-this.velY);
-            shake(1);
+            //shake(1);
         }
     }
     this.hitLeft = function() {
@@ -180,7 +180,7 @@ function component(socketNum) {
                 return;
             }
             this.velX = restitution*(-this.velX);
-            shake(1);
+            //shake(1);
         }
     }
     this.hitRight = function() {
@@ -192,64 +192,23 @@ function component(socketNum) {
                 shake(5);
             }
             this.velX = restitution*(-this.velX);
-            shake(1)
+            //shake(1)
         }
     }
 
-    this.hitOthersWithAction = function() {
-        if(this.action!=""){
+    this.hitOthersWithAction = function() {        
+        if(this.action!="" && this.actionDirection!=""){
             for (var i in myGamePieces) {
                 if(i!=this.socketNum){
                     if(myGamePieces[i]){
-                        if(this.actionDirection=="left"){
-                            if(myGamePieces[i].x+this.width > this.x-this.actionWidth){
-                                if(myGamePieces[i].x < this.x){
-                                    if(myGamePieces[i].y > this.y-this.height){
-                                        if(myGamePieces[i].y < this.y+this.height){
-                                            console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
-                                            this.hitSomeone = true;
-                                            shake(2);
-                                        }
-                                    }
-                                }
-                            }
-                        }else if(this.actionDirection=="right"){
-                            if(myGamePieces[i].x+this.width > this.x+this.width){
-                                if(myGamePieces[i].x < this.x+this.width+this.actionWidth){
-                                    if(myGamePieces[i].y > this.y-this.height){
-                                        if(myGamePieces[i].y < this.y+this.height){
-                                            console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
-                                            this.hitSomeone = true;
-                                            shake(2);
-                                        }
-                                    }
-                                }
-                            }
-                        }else if(this.actionDirection=="up"){
-                            if(myGamePieces[i].y+this.height > this.y-this.actionWidth){
-                                if(myGamePieces[i].y < this.y){
-                                    if(myGamePieces[i].x+this.width > this.x){
-                                        if(myGamePieces[i].x < this.x+this.width){
-                                            console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
-                                            this.hitSomeone = true;
-                                            shake(2);
-                                        }
-                                    }
-                                }
-                            }
-                        }else if(this.actionDirection=="down"){
-                            if(myGamePieces[i].y+this.height > this.y+this.height){
-                                if(myGamePieces[i].y < this.y+this.height+this.actionWidth){
-                                    if(myGamePieces[i].x+this.width > this.x){
-                                        if(myGamePieces[i].x < this.x+this.width){
-                                            console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
-                                            this.hitSomeone = true;
-                                            shake(2);
-                                        }
+                        if(myGamePieces[i].x+this.width > this.actionX){
+                            if(myGamePieces[i].x < this.actionX+this.actionWidth){
+                                if(myGamePieces[i].y+this.height > this.actionY){
+                                    if(myGamePieces[i].y < this.actionY+this.actionHeight){
+                                        console.log("I hit someone!"+this.actionDirection);
+                                        hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                        this.hitSomeone = true;
+                                        shake(2);
                                     }
                                 }
                             }

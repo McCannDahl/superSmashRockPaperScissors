@@ -177,7 +177,11 @@ function keysReleased(e) {
 function shake(n){
     myGameArea.canvas.className = "apply-shake"+n;
     //myGameArea.canvas.classList.add("apply-shake"+n);
-    setTimeout(unshake, 100);
+    if(n==5){
+        setTimeout(unshake, 500);
+    }else{
+        setTimeout(unshake, 100);
+    }
 }
 
 function unshake(){
