@@ -3,8 +3,10 @@ function component(socketNum) {
     this.socketNum = socketNum;
     this.width = 20;
     this.height = 20;
-    this.actionWidth = 4;
-    this.actionHeight = 20;
+    this.actionX = 0;
+    this.actionY = 0;
+    this.actionWidth = 8;
+    this.actionHeight = 10;
     this.accX = 0;
     this.accY = 0; 
     this.gravity = 0.6; 
@@ -16,6 +18,9 @@ function component(socketNum) {
     this.action = "";
     this.actionDirection = "";
     this.health = this.width;
+    this.healthHeight = 4;
+    this.hitSomeone = false;
+    this.gotHitBySomeone = false;
 
     if(starting_positions[socketNum]){
         this.x = starting_positions[socketNum];
@@ -34,7 +39,7 @@ function component(socketNum) {
         }
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.fillStyle = "green";
-        ctx.fillRect(this.x, this.y-this.actionHeight-4, this.health, 4);
+        ctx.fillRect(this.x, this.y-this.actionWidth-this.healthHeight, this.health, this.healthHeight);
     }
     this.updateActions = function() {
         ctx = myGameArea.context;
@@ -49,16 +54,16 @@ function component(socketNum) {
                 ctx.fillStyle = "blue";
             }
             if(this.actionDirection == "up"){
-                ctx.fillRect(this.x+10-(this.actionHeight/2), this.y-this.actionWidth, this.actionHeight, this.actionWidth);
+                ctx.fillRect(this.actionX, this.actionY, this.actionHeight, this.actionWidth);
             }
             if(this.actionDirection == "down"){
-                ctx.fillRect(this.x+10-(this.actionHeight/2), this.y+20, this.actionHeight, this.actionWidth);
+                ctx.fillRect(this.actionX, this.actionY, this.actionHeight, this.actionWidth);
             }
             if(this.actionDirection == "left"){
-                ctx.fillRect(this.x-this.actionWidth, this.y+10-(this.actionHeight/2), this.actionWidth, this.actionHeight);
+                ctx.fillRect(this.actionX, this.actionY, this.actionHeight, this.actionWidth);
             }
             if(this.actionDirection == "right"){
-                ctx.fillRect(this.x+20, this.y+10-(this.actionHeight/2), this.actionWidth, this.actionHeight);
+                ctx.fillRect(this.actionX, this.actionY, this.actionHeight, this.actionWidth);
             }
         }
     }
@@ -107,9 +112,36 @@ function component(socketNum) {
         this.hitTop();
         this.hitLeft();
         this.hitRight();
+    }
+    this.updateActionsXY = function(){
+        if(this.actionDirection == "up"){
+            this.actionX = this.x+(this.width/2)-(this.actionHeight/2);
+            this.actionY = this.y-this.actionWidth;
+        }
+        if(this.actionDirection == "down"){
+            this.actionX = this.x+(this.width/2)-(this.actionHeight/2);
+            this.actionY = this.y+this.height;
+        }
+        if(this.actionDirection == "left"){
+            this.actionX = this.x-this.actionWidth;
+            this.actionY = this.y+(this.height/2)-(this.actionHeight/2);
+        }
+        if(this.actionDirection == "right"){
+            this.actionX = this.x+this.width;
+            this.actionY = this.y+(this.height/2)-(this.actionHeight/2);
+        }
+    }
+    this.calculateActionsCollisions = function(){
+        this.hitSomeone = false;
+        this.gotHitBySomeone = false;
         this.hitOthersWithAction();
+        this.hitOtherActionsWithAction();
+        if(this.hitSomeone || this.gotHitBySomeone){
+            unaction();
+        }
         sendSocketData();
     }
+
     this.hitBottom = function() {
         if (this.y > myGameArea.canvas.height - this.height) {
             this.y = myGameArea.canvas.height - this.height;
@@ -145,7 +177,7 @@ function component(socketNum) {
     this.hitRight = function() {
         if (this.x > myGameArea.canvas.width - this.width) {
             this.x = myGameArea.canvas.width - this.width;
-            if(this.velX>deathVelocity){
+            if(this.velX > deathVelocity){
                 die();
             }
             this.velX = restitution*(-this.velX);
@@ -154,84 +186,79 @@ function component(socketNum) {
     this.hitOthersWithAction = function() {
         if(this.action!=""){
             for (var i in myGamePieces) {
-                if(i!=this.socketNumber){
+                if(i!=this.socketNum){
                     if(myGamePieces[i]){
-                        var w = 0;
                         if(this.actionDirection=="left"){
-                            if(myGamePieces[i].actionDirection=="right"){
-                                w = this.actionWidth;
-                            }
-                            if(myGamePieces[i].x+20+w > this.x-this.actionWidth){
+                            if(myGamePieces[i].x+this.width > this.x-this.actionWidth){
                                 if(myGamePieces[i].x < this.x){
-                                    if(myGamePieces[i].y > this.y-20){
-                                        if(myGamePieces[i].y < this.y+20){
+                                    if(myGamePieces[i].y > this.y-this.height){
+                                        if(myGamePieces[i].y < this.y+this.height){
                                             console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection);
-                                            if(w!=0){
-                                                console.log("I got hit");
-                                                getHit(myGamePieces[i].action,myGamePieces[i].actionDirection,this.action);
-                                            }
-                                            unaction();
+                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                            this.hitSomeone = true;
                                         }
                                     }
                                 }
                             }
                         }else if(this.actionDirection=="right"){
-                            w = 0;
-                            if(myGamePieces[i].actionDirection=="left"){
-                                w = this.actionWidth;
-                            }
-                            if(myGamePieces[i].x+20 > this.x+20){
-                                if(myGamePieces[i].x-w < this.x+20+this.actionWidth){
-                                    if(myGamePieces[i].y > this.y-20){
-                                        if(myGamePieces[i].y < this.y+20){
+                            if(myGamePieces[i].x+this.width > this.x+this.width){
+                                if(myGamePieces[i].x < this.x+this.width+this.actionWidth){
+                                    if(myGamePieces[i].y > this.y-this.height){
+                                        if(myGamePieces[i].y < this.y+this.height){
                                             console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection);
-                                            if(w!=0){
-                                                console.log("I got hit");
-                                                getHit(myGamePieces[i].action,myGamePieces[i].actionDirection,this.action);
-                                            }
-                                            unaction();
+                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                            this.hitSomeone = true;
                                         }
                                     }
                                 }
                             }
                         }else if(this.actionDirection=="up"){
-                            w = 0;
-                            if(myGamePieces[i].actionDirection=="down"){
-                                w = this.actionWidth;
-                            }
-                            if(myGamePieces[i].y+20+w > this.y-this.actionWidth){
+                            if(myGamePieces[i].y+this.height > this.y-this.actionWidth){
                                 if(myGamePieces[i].y < this.y){
-                                    if(myGamePieces[i].x+20 > this.x){
-                                        if(myGamePieces[i].x < this.x+20){
+                                    if(myGamePieces[i].x+this.width > this.x){
+                                        if(myGamePieces[i].x < this.x+this.width){
                                             console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection);
-                                            if(w!=0){
-                                                console.log("I got hit");
-                                                getHit(myGamePieces[i].action,myGamePieces[i].actionDirection,this.action);
-                                            }
-                                            unaction();
+                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                            this.hitSomeone = true;
                                         }
                                     }
                                 }
                             }
                         }else if(this.actionDirection=="down"){
-                            w = 0;
-                            if(myGamePieces[i].actionDirection=="up"){
-                                w = this.actionWidth;
-                            }
-                            if(myGamePieces[i].y+20 > this.y+20){
-                                if(myGamePieces[i].y-w < this.y+20+this.actionWidth){
-                                    if(myGamePieces[i].x+20 > this.x){
-                                        if(myGamePieces[i].x < this.x+20){
+                            if(myGamePieces[i].y+this.height > this.y+this.height){
+                                if(myGamePieces[i].y < this.y+this.height+this.actionWidth){
+                                    if(myGamePieces[i].x+this.width > this.x){
+                                        if(myGamePieces[i].x < this.x+this.width){
                                             console.log("I hit someone!"+this.actionDirection);
-                                            hit(i,this.action,this.actionDirection);
-                                            if(w!=0){
-                                                console.log("I got hit");
-                                                getHit(myGamePieces[i].action,myGamePieces[i].actionDirection,this.action);
-                                            }
-                                            unaction();
+                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                            this.hitSomeone = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    this.hitOtherActionsWithAction = function(){
+        if(this.action!="" && this.actionDirection!=""){
+            for (var i in myGamePieces) {
+                if(i!=this.socketNum){
+                    if(myGamePieces[i]){
+                        if(myGamePieces[i].action!="" && myGamePieces[i].actionDirection!=""){
+                            if(myGamePieces[i].actionX+this.actionWidth > this.actionX){
+                                if(myGamePieces[i].actionX < this.actionX+this.actionWidth){
+                                    if(myGamePieces[i].actionY+this.actionHeight > this.actionY){
+                                        if(myGamePieces[i].actionY < this.actionY+this.actionHeight){
+                                            console.log("We hit each other!"+this.actionDirection);
+                                            console.log("i = "+i+" this.socketNum = "+this.socketNum);
+                                            console.log({a:this.action,b:this.actionDirection,c:myGamePieces[i].action,d:myGamePieces[i].actionDirection});
+                                            getHit(myGamePieces[i].action,myGamePieces[i].actionDirection,this.action,this.actionDirection);
+                                            hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
+                                            this.gotHitBySomeone = true;
+                                            this.hitSomeone = true;
                                         }
                                     }
                                 }

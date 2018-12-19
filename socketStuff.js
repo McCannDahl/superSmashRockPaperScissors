@@ -39,7 +39,7 @@ socket.on('hit', function(data) {
     console.log("hit emit recieved");
     console.log(data);
     if(data.number == socketNumber){
-        getHit(data.action,data.direction);
+        getHit(data.action,data.direction,data.myaction,data.mydirection);
     }
 });
 function sendSocketData() {
@@ -52,8 +52,8 @@ function sendHealthSocketData() {
     socket.emit('socketHealthUpdate', {number : socketNumber, health : myGamePieces[socketNumber].health});
 };
 
-function hit(i,action,dir){
+function hit(i,action,dir,myaction,mydir){
     console.log("hit emit");
-    console.log({number : i, action : action, direction : dir });
-    socket.emit('hit', {number : i, action : action, direction : dir });
+    console.log({number : i, action : action, direction : dir,myaction : myaction, mydirection : mydir });
+    socket.emit('hit', {number : i, action : action, direction : dir,myaction : myaction, mydirection : mydir });
 }

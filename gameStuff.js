@@ -28,8 +28,8 @@ var myGameArea = {
 }
 
 
-function getHit(action,dir,myaction){
-    console.log("I got hit "+dir);
+function getHit(action,direction,myaction,mydirection){
+    console.log("I got hit "+direction);
 
     var flyPower = 0;
     var healthHitter = 0;
@@ -81,30 +81,26 @@ function getHit(action,dir,myaction){
         }
     }
 
-    myGamePieces[socketNumber].health -= 20*healthHitter;
+    myGamePieces[socketNumber].health -= myGamePieces[socketNumber].width*healthHitter;
 
     if(myGamePieces[socketNumber].health<1){
         myGamePieces[socketNumber].health = 1;
     }
 
-    var healthPercentage = myGamePieces[socketNumber].health/20;
+    var healthPercentage = myGamePieces[socketNumber].health/myGamePieces[socketNumber].width;
 
-    if(dir == "left"){
-        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
-        //myGamePieces[socketNumber].accY = 0.6;
-        myGamePieces[socketNumber].velX += -(flyPower/healthPercentage)*deathVelocity;;
-    }else if(dir == "right"){
-        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
-        //myGamePieces[socketNumber].accY = 0.6;
-        myGamePieces[socketNumber].velX += (flyPower/healthPercentage)*deathVelocity;;
-    }else if(dir == "up"){
-        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
-        //myGamePieces[socketNumber].accY = 0.6;
-    }else if(dir == "down"){
-        myGamePieces[socketNumber].velY += (flyPower/healthPercentage)*deathVelocity;;
-        //myGamePieces[socketNumber].accY = 0.6;
+    if(direction == "left"){
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;
+        myGamePieces[socketNumber].velX += -(flyPower/healthPercentage)*deathVelocity;
+    }else if(direction == "right"){
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;
+        myGamePieces[socketNumber].velX += (flyPower/healthPercentage)*deathVelocity;
+    }else if(direction == "up"){
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;
+    }else if(direction == "down"){
+        myGamePieces[socketNumber].velY += (flyPower/healthPercentage)*deathVelocity;
     }else{
-        console.log("error 9240857 "+dir);
+        console.log("error 9240857 "+direction);
     }
 
     sendHealthSocketData();
@@ -113,11 +109,14 @@ function getHit(action,dir,myaction){
 function updateGameArea() {
     myGameArea.clear();
     myGamePieces[socketNumber].newPos();
+    myGamePieces[socketNumber].updateActionsXY();
+    myGamePieces[socketNumber].calculateActionsCollisions();
     for (var i in myGamePieces) {
         if(myGamePieces[i]){
             if(i!=socketNumber){
                 checkForColissions(i);
                 myGamePieces[i].update();
+                myGamePieces[i].updateActionsXY();
                 myGamePieces[i].updateActions();
             }
         }
@@ -138,13 +137,13 @@ function jump() {
 }
 function checkForColissions(n){
     
-    if (myGamePieces[socketNumber].y > myGamePieces[n].y-20) {
+    if (myGamePieces[socketNumber].y > myGamePieces[n].y-myGamePieces[socketNumber].height) {
         if (myGamePieces[socketNumber].y <= myGamePieces[n].y) {
-            if (myGamePieces[socketNumber].x > myGamePieces[n].x-15) {
-                if (myGamePieces[socketNumber].x < myGamePieces[n].x+15) {
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-(myGamePieces[socketNumber].width-5)) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+(myGamePieces[socketNumber].width-5)) {
                     if(myGamePieces[socketNumber].velY>=0){
                         console.log("colision on top");
-                        myGamePieces[socketNumber].y = myGamePieces[n].y-20;
+                        myGamePieces[socketNumber].y = myGamePieces[n].y-myGamePieces[socketNumber].height;
                         //if(myGamePieces[socketNumber].velY<notMovingVelocity){
                             myGamePieces[socketNumber].velY = 0;
                         //}else{
@@ -158,12 +157,12 @@ function checkForColissions(n){
         }
     }
     if (myGamePieces[socketNumber].y > myGamePieces[n].y) {
-        if (myGamePieces[socketNumber].y < myGamePieces[n].y+20) {
-            if (myGamePieces[socketNumber].x > myGamePieces[n].x-15) {
-                if (myGamePieces[socketNumber].x < myGamePieces[n].x+15) {
+        if (myGamePieces[socketNumber].y < myGamePieces[n].y+myGamePieces[socketNumber].height) {
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-(myGamePieces[socketNumber].width-5)) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+(myGamePieces[socketNumber].width-5)) {
                     if(myGamePieces[socketNumber].velY<0){
                         console.log("colision on bottom");
-                        myGamePieces[socketNumber].y = myGamePieces[n].y+20;
+                        myGamePieces[socketNumber].y = myGamePieces[n].y+myGamePieces[socketNumber].height;
                         if(myGamePieces[socketNumber].velY>-notMovingVelocity){
                             myGamePieces[socketNumber].velY = 0;
                         }else{
@@ -175,13 +174,13 @@ function checkForColissions(n){
         }
     }
 
-    if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
+    if (myGamePieces[socketNumber].x > myGamePieces[n].x-myGamePieces[socketNumber].width) {
         if (myGamePieces[socketNumber].x < myGamePieces[n].x) {
-            if (myGamePieces[socketNumber].y > myGamePieces[n].y-15) {
-                if (myGamePieces[socketNumber].y < myGamePieces[n].y+15) {
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-(myGamePieces[socketNumber].height-5)) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+(myGamePieces[socketNumber].height-5)) {
                     if(myGamePieces[socketNumber].velX>0){
                         console.log("colision on right");
-                        myGamePieces[socketNumber].x = myGamePieces[n].x-20;
+                        myGamePieces[socketNumber].x = myGamePieces[n].x-myGamePieces[socketNumber].width;
                         if(myGamePieces[socketNumber].velX<notMovingVelocity){
                             myGamePieces[socketNumber].velX = 0;    
                         }else{
@@ -194,12 +193,12 @@ function checkForColissions(n){
         }
     }
     if (myGamePieces[socketNumber].x > myGamePieces[n].x) {
-        if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
-            if (myGamePieces[socketNumber].y > myGamePieces[n].y-15) {
-                if (myGamePieces[socketNumber].y < myGamePieces[n].y+15) {
+        if (myGamePieces[socketNumber].x < myGamePieces[n].x+myGamePieces[socketNumber].width) {
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-(myGamePieces[socketNumber].height-5)) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+(myGamePieces[socketNumber].height-5)) {
                     if(myGamePieces[socketNumber].velX<0){
                         console.log("colision on left");
-                        myGamePieces[socketNumber].x = myGamePieces[n].x+20;
+                        myGamePieces[socketNumber].x = myGamePieces[n].x+myGamePieces[socketNumber].width;
                         if(myGamePieces[socketNumber].velX>-notMovingVelocity){
                             myGamePieces[socketNumber].velX = 0;
                         }else{

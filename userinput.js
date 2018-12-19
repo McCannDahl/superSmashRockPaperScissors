@@ -58,6 +58,9 @@ function actionf(){
 }
 
 function unaction(){
+    if(socketNumber==0){
+        return;
+    }
     myGamePieces[socketNumber].action = "";
     myGamePieces[socketNumber].actionDirection = "";
     sendActionSocketData();
