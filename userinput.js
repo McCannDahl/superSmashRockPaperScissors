@@ -58,9 +58,9 @@ function actionf(){
 }
 
 function unaction(){
-    if(socketNumber==0){
-        return;
-    }
+    //if(socketNumber==0){
+    //    return;
+    //}
     myGamePieces[socketNumber].action = "";
     myGamePieces[socketNumber].actionDirection = "";
     sendActionSocketData();
@@ -172,4 +172,14 @@ function keysReleased(e) {
     }
  
     e.preventDefault();
+}
+
+function shake(n){
+    myGameArea.canvas.className = "apply-shake"+n;
+    //myGameArea.canvas.classList.add("apply-shake"+n);
+    setTimeout(unshake, 100);
+}
+
+function unshake(){
+    myGameArea.canvas.className = "";
 }

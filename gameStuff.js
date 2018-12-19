@@ -102,6 +102,8 @@ function getHit(action,direction,myaction,mydirection){
     }else{
         console.log("error 9240857 "+direction);
     }
+    
+    shake(4);
 
     sendHealthSocketData();
 }
@@ -142,7 +144,7 @@ function checkForColissions(n){
             if (myGamePieces[socketNumber].x > myGamePieces[n].x-(myGamePieces[socketNumber].width-5)) {
                 if (myGamePieces[socketNumber].x < myGamePieces[n].x+(myGamePieces[socketNumber].width-5)) {
                     if(myGamePieces[socketNumber].velY>=0){
-                        console.log("colision on top");
+                        //console.log("colision on top");
                         myGamePieces[socketNumber].y = myGamePieces[n].y-myGamePieces[socketNumber].height;
                         //if(myGamePieces[socketNumber].velY<notMovingVelocity){
                             myGamePieces[socketNumber].velY = 0;
@@ -161,7 +163,7 @@ function checkForColissions(n){
             if (myGamePieces[socketNumber].x > myGamePieces[n].x-(myGamePieces[socketNumber].width-5)) {
                 if (myGamePieces[socketNumber].x < myGamePieces[n].x+(myGamePieces[socketNumber].width-5)) {
                     if(myGamePieces[socketNumber].velY<0){
-                        console.log("colision on bottom");
+                        //console.log("colision on bottom");
                         myGamePieces[socketNumber].y = myGamePieces[n].y+myGamePieces[socketNumber].height;
                         if(myGamePieces[socketNumber].velY>-notMovingVelocity){
                             myGamePieces[socketNumber].velY = 0;
@@ -197,7 +199,7 @@ function checkForColissions(n){
             if (myGamePieces[socketNumber].y > myGamePieces[n].y-(myGamePieces[socketNumber].height-5)) {
                 if (myGamePieces[socketNumber].y < myGamePieces[n].y+(myGamePieces[socketNumber].height-5)) {
                     if(myGamePieces[socketNumber].velX<0){
-                        console.log("colision on left");
+                        //console.log("colision on left");
                         myGamePieces[socketNumber].x = myGamePieces[n].x+myGamePieces[socketNumber].width;
                         if(myGamePieces[socketNumber].velX>-notMovingVelocity){
                             myGamePieces[socketNumber].velX = 0;

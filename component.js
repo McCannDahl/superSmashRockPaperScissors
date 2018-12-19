@@ -147,9 +147,12 @@ function component(socketNum) {
             this.y = myGameArea.canvas.height - this.height;
             if(this.velY>deathVelocity){
                 die();
+                shake(5);
+                return;
             }
             if(this.velY>(notMovingVelocity*2)){
                 this.velY = (restitution*restitution)*(-this.velY);
+                shake(1);
             }else{
                 this.velY = 0;
                 jumping = false;
@@ -161,8 +164,11 @@ function component(socketNum) {
             this.y = 0;
             if(this.velY<-deathVelocity){
                 die();
+                shake(5);
+                return;
             }
             this.velY = restitution*(-this.velY);
+            shake(1);
         }
     }
     this.hitLeft = function() {
@@ -170,8 +176,11 @@ function component(socketNum) {
             this.x = 0;
             if(this.velX<-deathVelocity){
                 die();
+                shake(5);
+                return;
             }
             this.velX = restitution*(-this.velX);
+            shake(1);
         }
     }
     this.hitRight = function() {
@@ -179,10 +188,14 @@ function component(socketNum) {
             this.x = myGameArea.canvas.width - this.width;
             if(this.velX > deathVelocity){
                 die();
+                return;
+                shake(5);
             }
             this.velX = restitution*(-this.velX);
+            shake(1)
         }
     }
+
     this.hitOthersWithAction = function() {
         if(this.action!=""){
             for (var i in myGamePieces) {
@@ -196,6 +209,7 @@ function component(socketNum) {
                                             console.log("I hit someone!"+this.actionDirection);
                                             hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
                                             this.hitSomeone = true;
+                                            shake(2);
                                         }
                                     }
                                 }
@@ -208,6 +222,7 @@ function component(socketNum) {
                                             console.log("I hit someone!"+this.actionDirection);
                                             hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
                                             this.hitSomeone = true;
+                                            shake(2);
                                         }
                                     }
                                 }
@@ -220,6 +235,7 @@ function component(socketNum) {
                                             console.log("I hit someone!"+this.actionDirection);
                                             hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
                                             this.hitSomeone = true;
+                                            shake(2);
                                         }
                                     }
                                 }
@@ -232,6 +248,7 @@ function component(socketNum) {
                                             console.log("I hit someone!"+this.actionDirection);
                                             hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
                                             this.hitSomeone = true;
+                                            shake(2);
                                         }
                                     }
                                 }
@@ -259,6 +276,7 @@ function component(socketNum) {
                                             hit(i,this.action,this.actionDirection,myGamePieces[i].action,myGamePieces[i].actionDirection);
                                             this.gotHitBySomeone = true;
                                             this.hitSomeone = true;
+                                            shake(3);
                                         }
                                     }
                                 }
