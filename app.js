@@ -11,6 +11,12 @@ app.get('/socketStuff.js', function(req, res) {
 app.get('/gameStuff.js', function(req, res) {
    res.sendfile('gameStuff.js');
 });
+app.get('/component.js', function(req, res) {
+   res.sendfile('component.js');
+});
+app.get('/userinput.js', function(req, res) {
+   res.sendfile('userinput.js');
+});
 
 var userNumber = 0;
 var users = [];
@@ -32,6 +38,9 @@ io.on('connection', function(socket) {
    });
    socket.on('socketActionUpdate', function(data) {
       io.sockets.emit('socketActionUpdate', data);
+   });
+   socket.on('socketHealthUpdate', function(data) {
+      io.sockets.emit('socketHealthUpdate', data);
    });
    socket.on('hit', function(data) {
       io.sockets.emit('hit', data);

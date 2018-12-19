@@ -9,7 +9,7 @@ function removeUser(n) {
 
 function startGame() {
     myGamePieces[socketNumber] = new component(socketNumber);
-    myGamePieces[socketNumber].accY = 0.05;
+    //myGamePieces[socketNumber].accY = 0.05;
     myGameArea.start();
 }
 
@@ -27,217 +27,87 @@ var myGameArea = {
     }
 }
 
-function component(socketNum) {
-    this.socketNum = socketNum;
-    this.width = 20;
-    this.height = 20;
-    this.actionWidth = 4;
-    this.accX = 0;
-    this.accY = 0; 
-    this.gravity = 0.6; 
-    this.velX = 0;
-    this.velXMax = 4;
-    this.velY = 50;
-    this.x = 0;
-    this.y = 0;
-    this.jumping = false;
-    this.flying = false;
-    this.action = "";
-    this.actionDirection = "";
 
-    if(starting_positions[socketNum]){
-        this.x = starting_positions[socketNum];
-    }else{
-        console.log("error 23948567");
-        this.x = 400;
-    }
+function getHit(action,dir,myaction){
+    console.log("I got hit "+dir);
 
-    this.update = function() {
-        ctx = myGameArea.context;
-        if(colors[socketNum]){
-            ctx.fillStyle = colors[socketNum];
-        }else{
-            console.log("error 29384567");
-            ctx.fillStyle = "red";
+    var flyPower = 0;
+    var healthHitter = 0;
+
+    if(action=="rock"){
+        flyPower = .2;
+        healthHitter = 0;
+        if(myaction){
+            if(myaction == "rock"){
+                flyPower = .1;
+                healthHitter = 0;
+            }else if(myaction == "paper"){
+                flyPower = 0;
+                healthHitter = 0;
+            }else if(myaction == "scissors"){
+                flyPower = .4;
+                healthHitter = 0;
+            }
         }
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-    this.updateActions = function() {
-        ctx = myGameArea.context;
-        if(this.action != ""){
-            if(this.action == "rock"){
-                ctx.fillStyle = "brown";
+    }else if(action=="paper"){
+        flyPower = .1;
+        healthHitter = .1;
+        if(myaction){
+            if(myaction == "rock"){
+                flyPower = .2;
+                healthHitter = .2;
+            }else if(myaction == "paper"){
+                flyPower = .05;
+                healthHitter = .05;
+            }else if(myaction == "scissors"){
+                flyPower = 0;
+                healthHitter = 0;
             }
-            if(this.action == "paper"){
-                ctx.fillStyle = "grey";
-            }
-            if(this.action == "scissors"){
-                ctx.fillStyle = "blue";
-            }
-            if(this.actionDirection == "up"){
-                ctx.fillRect(this.x, this.y-this.actionWidth, 20, this.actionWidth);
-            }
-            if(this.actionDirection == "down"){
-                ctx.fillRect(this.x, this.y+20, 20, this.actionWidth);
-            }
-            if(this.actionDirection == "left"){
-                ctx.fillRect(this.x-this.actionWidth, this.y, this.actionWidth, 20);
-            }
-            if(this.actionDirection == "right"){
-                ctx.fillRect(this.x+20, this.y, this.actionWidth, 20);
+        }
+    }else if(action=="scissors"){
+        flyPower = 0;
+        healthHitter = .2;
+        if(myaction){
+            if(myaction == "rock"){
+                flyPower = 0;
+                healthHitter = 0;
+            }else if(myaction == "paper"){
+                flyPower = 0;
+                healthHitter = .4;
+            }else if(myaction == "scissors"){
+                flyPower = 0;
+                healthHitter = .1;
             }
         }
     }
 
-    this.newPos = function() {
-        if(this.action == "" || this.jumping){
-            if(left && !right){
-                this.accX = -0.5;
-            }
-            if(!left && right){
-                this.accX = 0.5;
-            }
-            if((!left && !right) || (left && right)){
-                if(this.velX > 0){
-                    this.accX = -0.5;
-                }
-                if(this.velX < 0){
-                    this.accX = 0.5;
-                }
-            }
-        }else{
-            if(this.velX > 0){
-                this.accX = -0.5;
-            }
-            if(this.velX < 0){
-                this.accX = 0.5;
-            }
-        }
-        if(!(this.velX <= this.velXMax && this.velX+this.accX > this.velXMax) && !(this.velX >= -this.velXMax && this.velX+this.accX < -this.velXMax)){
-            this.velX += this.accX;
-        }
+    myGamePieces[socketNumber].health -= 20*healthHitter;
 
-        this.velY += this.accY;
-        this.x += this.velX;
-        this.y += this.velY;
-        this.hitBottom();
-        this.hitTop();
-        this.hitLeft();
-        this.hitRight();
-        this.hitOthersWithAction();
-        this.hitOtherActionsWithAction();
-        sendSocketData();
+    if(myGamePieces[socketNumber].health<1){
+        myGamePieces[socketNumber].health = 1;
     }
-    this.hitBottom = function() {
-        var rockbottom = myGameArea.canvas.height - this.height;
-        if (this.y > rockbottom) {
-            this.y = rockbottom;
-            this.velY = 0;
-            this.accY = 0;
-            this.jumping = false;
-            this.flying = false;
-        }
-    }
-    this.hitTop = function() {
-        var rocktop = 0;
-        if (this.y < 0) {
-            this.y = 0;
-            this.velY = -this.velY;
-        }
-    }
-    this.hitLeft = function() {
-        var rockleft = 0;
-        if (this.x < 0) {
-            this.x = 0;
-            this.velX = 0;
-        }
-    }
-    this.hitRight = function() {
-        var rockRight = myGameArea.canvas.width - this.width;
-        if (this.x > rockRight) {
-            this.x = rockRight;
-            this.velX = 0;
-        }
-    }
-    this.hitOthersWithAction = function() {
-        if(this.action!=""){
-            for (var i in myGamePieces) {
-                if(i!=this.socketNumber){
-                    if(myGamePieces[i]){
-                        if(this.actionDirection=="left"){
-                            if(myGamePieces[i].x+20 > this.x-this.actionWidth){
-                                if(myGamePieces[i].x < this.x){
-                                    if(myGamePieces[i].y > this.y-20){
-                                        if(myGamePieces[i].y < this.y+20){
-                                            hit(i,this.action,this.actionDirection);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if(this.actionDirection=="right"){
-                            if(myGamePieces[i].x+20 > this.x+20){
-                                if(myGamePieces[i].x < this.x+20+this.actionWidth){
-                                    if(myGamePieces[i].y > this.y-20){
-                                        if(myGamePieces[i].y < this.y+20){
-                                            hit(i,this.action,this.actionDirection);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if(this.actionDirection=="up"){
-                            if(myGamePieces[i].y+20 > this.y-this.actionWidth){
-                                if(myGamePieces[i].y < this.y){
-                                    if(myGamePieces[i].x+20 > this.x){
-                                        if(myGamePieces[i].x < this.x+20){
-                                            hit(i,this.action,this.actionDirection);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if(this.actionDirection=="down"){
-                            if(myGamePieces[i].y+20 > this.y+20){
-                                if(myGamePieces[i].y < this.y+20+this.actionWidth){
-                                    if(myGamePieces[i].x+20 > this.x){
-                                        if(myGamePieces[i].x < this.x+20){
-                                            hit(i,this.action,this.actionDirection);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    this.hitOtherActionsWithAction = function() {
 
-    }
-}
+    var healthPercentage = myGamePieces[socketNumber].health/20;
 
-function getHit(action,dir){
-    myGamePieces[socketNumber].flying = true;
     if(dir == "left"){
-        myGamePieces[socketNumber].velY -= 25;
-        myGamePieces[socketNumber].accY = 0.6;
-        myGamePieces[socketNumber].velX = -25;
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
+        //myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX += -(flyPower/healthPercentage)*deathVelocity;;
+    }else if(dir == "right"){
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
+        //myGamePieces[socketNumber].accY = 0.6;
+        myGamePieces[socketNumber].velX += (flyPower/healthPercentage)*deathVelocity;;
+    }else if(dir == "up"){
+        myGamePieces[socketNumber].velY -= (flyPower/healthPercentage)*deathVelocity;;
+        //myGamePieces[socketNumber].accY = 0.6;
+    }else if(dir == "down"){
+        myGamePieces[socketNumber].velY += (flyPower/healthPercentage)*deathVelocity;;
+        //myGamePieces[socketNumber].accY = 0.6;
+    }else{
+        console.log("error 9240857 "+dir);
     }
-    if(dir == "right"){
-        myGamePieces[socketNumber].velY -= 25;
-        myGamePieces[socketNumber].accY = 0.6;
-        myGamePieces[socketNumber].velX = 25;
-    }
-    if(dir == "up"){
-        myGamePieces[socketNumber].velY -= 25;
-        myGamePieces[socketNumber].accY = 0.6;
-    }
-    if(dir == "down"){
-        myGamePieces[socketNumber].velY = 25;
-        myGamePieces[socketNumber].accY = 0.6;
-    }
+
+    sendHealthSocketData();
 }
 
 function updateGameArea() {
@@ -247,35 +117,41 @@ function updateGameArea() {
         if(myGamePieces[i]){
             if(i!=socketNumber){
                 checkForColissions(i);
+                myGamePieces[i].update();
+                myGamePieces[i].updateActions();
             }
-            myGamePieces[i].update();
-            myGamePieces[i].updateActions();
         }
     }
+    myGamePieces[socketNumber].update();
+    myGamePieces[socketNumber].updateActions();
     sendSocketData();
 }
 
 function jump() {
-    if(!myGamePieces[socketNumber].jumping){
+    if(!jumping){
         if(myGamePieces[socketNumber].action == ""){
-            myGamePieces[socketNumber].jumping = true;
-            myGamePieces[socketNumber].velY -= 15;
-            myGamePieces[socketNumber].accY = 0.6;
+            jumping = true;
+            myGamePieces[socketNumber].velY -= jumpingVelocity;
+            //myGamePieces[socketNumber].accY = 0.6;
         }
     }
 }
 function checkForColissions(n){
     
     if (myGamePieces[socketNumber].y > myGamePieces[n].y-20) {
-        if (myGamePieces[socketNumber].y < myGamePieces[n].y) {
-            if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
-                if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
-                    console.log("colision on top");
-                    if(myGamePieces[socketNumber].velY>0){
+        if (myGamePieces[socketNumber].y <= myGamePieces[n].y) {
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-15) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+15) {
+                    if(myGamePieces[socketNumber].velY>=0){
+                        console.log("colision on top");
                         myGamePieces[socketNumber].y = myGamePieces[n].y-20;
-                        myGamePieces[socketNumber].velY = 0;
-                        myGamePieces[socketNumber].accY = 0;
-                        myGamePieces[socketNumber].jumping = false;
+                        //if(myGamePieces[socketNumber].velY<notMovingVelocity){
+                            myGamePieces[socketNumber].velY = 0;
+                        //}else{
+                        //    myGamePieces[socketNumber].velY = restitution*(-myGamePieces[socketNumber].velY);
+                        //}
+                        //myGamePieces[socketNumber].accY = 0;
+                        jumping = false;
                     }
                 }
             }
@@ -283,11 +159,17 @@ function checkForColissions(n){
     }
     if (myGamePieces[socketNumber].y > myGamePieces[n].y) {
         if (myGamePieces[socketNumber].y < myGamePieces[n].y+20) {
-            if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
-                if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
-                    console.log("colision on bottom");
-                    myGamePieces[socketNumber].y = myGamePieces[n].y+20;
-                    myGamePieces[socketNumber].yvel = -myGamePieces[socketNumber].yvel ;
+            if (myGamePieces[socketNumber].x > myGamePieces[n].x-15) {
+                if (myGamePieces[socketNumber].x < myGamePieces[n].x+15) {
+                    if(myGamePieces[socketNumber].velY<0){
+                        console.log("colision on bottom");
+                        myGamePieces[socketNumber].y = myGamePieces[n].y+20;
+                        if(myGamePieces[socketNumber].velY>-notMovingVelocity){
+                            myGamePieces[socketNumber].velY = 0;
+                        }else{
+                            myGamePieces[socketNumber].velY = restitution*(-myGamePieces[socketNumber].velY);
+                        }
+                    }
                 }
             }
         }
@@ -295,181 +177,56 @@ function checkForColissions(n){
 
     if (myGamePieces[socketNumber].x > myGamePieces[n].x-20) {
         if (myGamePieces[socketNumber].x < myGamePieces[n].x) {
-            if (myGamePieces[socketNumber].y > myGamePieces[n].y-10) {
-                if (myGamePieces[socketNumber].y < myGamePieces[n].y+10) {
-                    console.log("colision on left");
-                    myGamePieces[socketNumber].x = myGamePieces[n].x-20;
-                    myGamePieces[socketNumber].xvel = 0;
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-15) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+15) {
+                    if(myGamePieces[socketNumber].velX>0){
+                        console.log("colision on right");
+                        myGamePieces[socketNumber].x = myGamePieces[n].x-20;
+                        if(myGamePieces[socketNumber].velX<notMovingVelocity){
+                            myGamePieces[socketNumber].velX = 0;    
+                        }else{
+                            myGamePieces[socketNumber].velX = restitution*(-myGamePieces[socketNumber].velX);
+                        }                        
+                        myGamePieces[socketNumber].accX = 0;
+                    }
                 }
             }
         }
     }
     if (myGamePieces[socketNumber].x > myGamePieces[n].x) {
         if (myGamePieces[socketNumber].x < myGamePieces[n].x+20) {
-            if (myGamePieces[socketNumber].y > myGamePieces[n].y-10) {
-                if (myGamePieces[socketNumber].y < myGamePieces[n].y+10) {
-                    console.log("colision on right");
-                    myGamePieces[socketNumber].x = myGamePieces[n].x+20;
-                    myGamePieces[socketNumber].xvel = 0;
+            if (myGamePieces[socketNumber].y > myGamePieces[n].y-15) {
+                if (myGamePieces[socketNumber].y < myGamePieces[n].y+15) {
+                    if(myGamePieces[socketNumber].velX<0){
+                        console.log("colision on left");
+                        myGamePieces[socketNumber].x = myGamePieces[n].x+20;
+                        if(myGamePieces[socketNumber].velX>-notMovingVelocity){
+                            myGamePieces[socketNumber].velX = 0;
+                        }else{
+                            myGamePieces[socketNumber].velX = restitution*(-myGamePieces[socketNumber].velX);
+                        }
+                        myGamePieces[socketNumber].accX = 0;
+                    }
                 }
             }
         }
     }
 }
 
-function actionAfterMove(){
-    if(rock){
-        rockf();
-    }
-    if(paper){
-        paperf();
-    }
-    if(scissors){
-        scissorsf();
-    }
-}
-
-function rockf() {
-    if(up || down || left || right){
-        if(myGamePieces[socketNumber].action == ""){
-            myGamePieces[socketNumber].action = "rock";
-            actionf();
-        }
-    }
-}
-
-function paperf() {
-    if(up || down || left || right){
-        if(myGamePieces[socketNumber].action == ""){
-            myGamePieces[socketNumber].action = "paper";
-            actionf();
-        }
-    }
-}
-
-function scissorsf() {
-    if(up || down || left || right){
-        if(myGamePieces[socketNumber].action == ""){
-            myGamePieces[socketNumber].action = "scissors";
-            actionf();
-        }
-    }
-}
-
-
-function actionf(){
-    if(up){
-        myGamePieces[socketNumber].actionDirection = "up";
-    }
-    if(down){
-        myGamePieces[socketNumber].actionDirection = "down";
-    }
-    if(left){
-        myGamePieces[socketNumber].actionDirection = "left";
-    }
-    if(right){
-        myGamePieces[socketNumber].actionDirection = "right";
-    }
+function die(){
+    console.log("I died");
+    myGamePieces[socketNumber] = new component(socketNumber);
+    sendHealthSocketData();
     sendActionSocketData();
-    setTimeout(unaction, 500);
-}
-
-function unaction(){
-    myGamePieces[socketNumber].action = "";
-    myGamePieces[socketNumber].actionDirection = "";
-    sendActionSocketData();
-}
-
-var up = false;
-var down = false;
-var left = false;
-var right = false;
-
-window.addEventListener("keydown", keysPressed, false);
-window.addEventListener("keyup", keysReleased, false);
-function keysPressed(e) {
-    // left
-    if (e.keyCode == 37) {
-        left = true;
-        actionAfterMove();
-    }
-    // right
-    if (e.keyCode == 39) {
-        right = true;
-        actionAfterMove();
-    }
-    // up
-    if (e.keyCode == 38) {
-        up = true;
-        actionAfterMove();
-        jump();
-    }
-    // down
-    if (e.keyCode == 40) {
-        down = true;
-        actionAfterMove();
-    }
-
-    // a
-    if (e.keyCode == 65) {
-        rock = true;
-        paper = false;
-        scissors = false;
-        rockf();
-    }
-    // s
-    if (e.keyCode == 83) {
-        rock = false;
-        paper = true;
-        scissors = false;
-        paperf();
-    }
-    // d
-    if (e.keyCode == 68) {
-        rock = false;
-        paper = false;
-        scissors = true;
-        scissorsf();
-    }
- 
-    e.preventDefault();
-}
- 
-function keysReleased(e) {
-    // left
-    if (e.keyCode == 37) {
-        left = false;
-    }
-    // right
-    if (e.keyCode == 39) {
-        right = false;
-    }
-    // up
-    if (e.keyCode == 38) {
-        up = false;
-    }
-    // down
-    if (e.keyCode == 40) {
-        down = false;
-    }
-
-
-    // a
-    if (e.keyCode == 65) {
-        rock = false;
-    }
-    // s
-    if (e.keyCode == 83) {
-        paper = false;
-    }
-    // d
-    if (e.keyCode == 68) {
-        scissors = false;
-    }
- 
-    e.preventDefault();
 }
 
 var starting_positions = [ 10, 800-20-10, 400-10, 200-10, 600-10 ];
 var colors = ["black","red","orange","olive","green","blue","purple","fuchsia","teal","aqua"];
 //var CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
+
+var restitution = 0.6;
+var jumpingVelocity = 12;
+var notMovingVelocity = jumpingVelocity;
+var notMovingAcceleration = 1;
+var deathVelocity = 50;
+
