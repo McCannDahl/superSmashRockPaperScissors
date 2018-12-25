@@ -128,6 +128,7 @@ function updateGameArea() {
     sendSocketData();
 }
 
+
 function jump() {
     if(!jumping){
         if(myGamePieces[socketNumber].action == ""){
