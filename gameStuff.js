@@ -117,14 +117,14 @@ function updateGameArea() {
         if(myGamePieces[i]){
             if(i!=socketNumber){
                 checkForColissions(i);
-                myGamePieces[i].update();
                 myGamePieces[i].updateActionsXY();
                 myGamePieces[i].updateActions();
+                myGamePieces[i].update();
             }
         }
     }
-    myGamePieces[socketNumber].update();
     myGamePieces[socketNumber].updateActions();
+    myGamePieces[socketNumber].update();
     sendSocketData();
 }
 
