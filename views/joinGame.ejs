@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</head>
+<body>
+
+  <div class="w3-container">
+    <h2>Join Game</h2>
+  
+    <table class="w3-table-all w3-card-4" id="tableDiv">
+      <tr>
+        <th>Game Name</th>
+        <th>Players</th>
+        <th>Type</th>
+        <th></th>
+        <th>Map</th>
+        <th></th>
+      </tr>
+    </table>
+  </div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    $.post("getGamesData", {}, function(result){
+      console.log(result);
+      if(result) {
+        for (var i = 0; i < result.games.length; i++) { 
+          var game = result.games[i];
+          console.log(game);
+          var rowStringHTML = "";
+          rowStringHTML += "<th>"+game.nameOfGame+"</th>";
+          rowStringHTML += "<th>"+game.currentNumberOfPlayers+"/"+game.maxNumberOfPlayers+"</th>";
+          if(game.timeLives=="on"){
+            rowStringHTML += "<th>"+game.time+" mins"+"</th>";
+          }else{
+            rowStringHTML += "<th>"+game.lives+" Lives"+"</th>";
+          }
+          if(game.privatePublic=="on"){
+            rowStringHTML += "<th>"+"Public"+"</th>";
+          }else{
+            rowStringHTML += "<th>"+"Private"+"</th>";
+          }
+          rowStringHTML += "<th>"+game.map+"</th>";
+          rowStringHTML += "<th>";
+            rowStringHTML += '<form method="post" action="/joinGameClicked">'
+            rowStringHTML += '<div class="center" style="display:none">';
+            rowStringHTML += 'Game ID: <input type="text" name="gameID" id="gameID" value="'+game.gameID+'">'
+            rowStringHTML += '</div>'
+            rowStringHTML += '<button class="center" type="submit">Join</button>';
+            rowStringHTML += '</form>';
+            rowStringHTML += '</th>';
+
+          document.getElementById('tableDiv').innerHTML += "<tr>";
+          document.getElementById('tableDiv').innerHTML += rowStringHTML;
+          document.getElementById('tableDiv').innerHTML += "</tr>";
+        }
+      }
+    });
+});
+</script>
+
+</html>
