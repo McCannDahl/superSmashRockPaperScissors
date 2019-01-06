@@ -166,9 +166,11 @@ io.on('connection', function(socket) {
 
    socket.on('leftKeyPressed', function () {
       velX = -2;
+      gamesJson.games[gameID].players[name].movementDirection = "left";
    });
    socket.on('rightKeyPressed', function () {
       velX = 2;
+      gamesJson.games[gameID].players[name].movementDirection = "right";
    });
    socket.on('upKeyPressed', function () {
    });
@@ -183,10 +185,12 @@ io.on('connection', function(socket) {
    socket.on('leftKeyReleased', function () {
       leftKeyDown = false;
       velX = 0;
+      gamesJson.games[gameID].players[name].movementDirection = "front";
    });
    socket.on('rightKeyReleased', function () {
       rightKeyDown = false;
       velX = 0;
+      gamesJson.games[gameID].players[name].movementDirection = "front";
    });
    socket.on('upKeyReleased', function () {
    });
@@ -274,7 +278,12 @@ function addPlayerToGame(name,gameID){
    if(typeof gameID != "undefined"){
       if(typeof name != "undefined"){
          var gameIndex = getGameIndexFromGameID(gameID);
-         gamesJson.games[gameIndex].players[name] = {x:0,y:0};
+         gamesJson.games[gameIndex].players[name] = {
+            x:0,
+            y:0,
+            character:"geraff",
+            movementDirection:"front"
+         };
          return true;
       }
    }

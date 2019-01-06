@@ -67,12 +67,7 @@
     <script>
         /////////////variables//////////////
         var players = {};
-        var image = new Image(); // Using optional size for image
-        image.src = 'https://mdn.mozillademos.org/files/5397/rhino.jpg';
-            
-
-
-
+        var image = new Image();
 
 
 
@@ -101,7 +96,8 @@
         function drawPlayers(){
             for (var key in players) {
                 if (players.hasOwnProperty(key)) {
-                    myGameArea.context.drawImage(image, players[key].x, players[key].y, 10, 10);
+                    image.src = '/images/'+players[key].character+'_'+players[key].movementDirection+".PNG";
+                    myGameArea.context.drawImage(image, players[key].x, players[key].y, 30, 50);
                 }
             }
         }
