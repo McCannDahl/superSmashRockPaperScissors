@@ -17,6 +17,7 @@ app.set('view engine', 'ejs');
 
 ///////////variables//////////////
 var gamesJson = {games:[]};
+var socketNumber = 0;
 
 
 ///////////routes/////////////////
@@ -35,9 +36,10 @@ app.post('/getGamesData', function(req, res) {
    console.log("gamesJson");
    console.log(gamesJson);
    var data = {games:[]};
-   for (var i = 0; i < gamesJson.games.length; i++) { 
+   for (var i = 0; i < gamesJson.games.length; i++) {
       var game = {};
       game.nameOfGame = gamesJson.games[i].nameOfGame;
+      game.currentNumberOfPlayers = gamesJson.games[i].players.length;
       game.maxNumberOfPlayers = gamesJson.games[i].maxNumberOfPlayers;
       game.timeLives = gamesJson.games[i].timeLives;
       game.time = gamesJson.games[i].time;
@@ -63,6 +65,7 @@ app.post('/joinGameClicked', function(req, res) {
       }
       res.render('joinSpecificGame',{gameID:game.gameID,isTherePassword:isTherePassword,password:""});
    }else{
+      console.log("game is undefined");
       res.render('index');
    }
 });
@@ -98,44 +101,130 @@ app.post('/createNewGame', function(req, res) {
    if(gameID!=-1){
       res.render('joinSpecificGame',{gameID:gameID,isTherePassword:isTherePassword,password:data.password});
    }else{
+      console.log("gameID is invalid");
       res.render('index');
    }
 });
 app.post('/joinSpecificGame', function(req, res) {
    var data = {
+      password:req.body.password,
       gameID:req.body.gameID,
       myName:req.body.myName,
    };
+   console.log("joinSpecificGame");
    console.log(data);
-   res.render('index');
+   //todo check to see if player name is taken
+   if(passwordIsCorrect(data.password,data.gameID)){
+      if(addPlayerToGame(data.myName,data.gameID)){
+         res.render('game',{gameID:data.gameID,name:data.myName,password:data.password});
+         console.log("added player");
+         console.log(gamesJson);
+      }else{
+         console.log("player not added to game");
+         res.render('index');
+      }
+   }else{
+      console.log("password incorrect");
+      res.render('index');
+   }
 });
 
-/*
+
 io.on('connection', function(socket) {
-   console.log('A user connected'+userNumber);
-   io.sockets.emit('newUser',{ number: userNumber});
-   socket.emit('socketNumber',{ number: userNumber});
-   socket.on('socketUpdate', function(data) {
-      io.sockets.emit('socketUpdate', data);
-   });
+   console.log('A user connected');
+   socket.emit('socketNumber',{ socketNumber: socketNumber});
+   var mySocketNumber = socketNumber;
+   var gameID = null;
+   var name = null;
+   var password = null;
+   var isValid = false;
+   var velX = 0;
+   var leftKeyDown = false;
+   var rightKeyDown = false;
+
+   socketNumber++;
    socket.on('disconnect', function () {
       console.log('A user disconnected '+mySocketNumber);
-      users[mySocketNumber] = "";
-      io.sockets.emit('socketDisconnected', { number: mySocketNumber});
+   });
+   socket.on('validate', function (data) {
+      console.log('validating user');
+      if(validateUser(data.gameID,data.name,data.password)){
+         gameID = data.gameID;
+         name = data.name;
+         password = password;
+         isValid = true;
+         socket.join("room-"+gameID);
+         console.log("user is valid");
+         socket.emit('validation',{ valid: true});
+         io.sockets.in("room-"+gameID).emit('welcomeMe',{name:name});
+      }else{
+         console.log("user is not vlaid");
+         socket.emit('validation',{ valid: false});
+      }
    });
 
+
+   socket.on('leftKeyPressed', function () {
+      velX = -2;
+   });
+   socket.on('rightKeyPressed', function () {
+      velX = 2;
+   });
+   socket.on('upKeyPressed', function () {
+   });
+   socket.on('downKeyPressed', function () {
+   });
+   socket.on('rockKeyPressed', function () {
+   });
+   socket.on('paperKeyPressed', function () {
+   });
+   socket.on('scissorsKeyPressed', function () {
+   });
+   socket.on('leftKeyReleased', function () {
+      leftKeyDown = false;
+      velX = 0;
+   });
+   socket.on('rightKeyReleased', function () {
+      rightKeyDown = false;
+      velX = 0;
+   });
+   socket.on('upKeyReleased', function () {
+   });
+   socket.on('downKeyReleased', function () {
+   });
+   socket.on('rockKeyReleased', function () {
+   });
+   socket.on('paperKeyReleased', function () {
+   });
+   socket.on('scissorsKeyReleased', function () {
+   });
+
+   //////////////update position/////////////
+   setInterval(function() {
+      if(isValid && gamesJson.games[gameID]){
+         gamesJson.games[gameID].players[name].x += velX;
+      }
+   }, 50);
+
 });
-*/
+
+/////////////////////////send data to game clients///////////////////////
+setInterval(function() {
+   for (var i = 0; i < gamesJson.games.length; i++) {
+      io.sockets.in("room-"+gamesJson.games[i].gameID).emit('playersPositions',{players:gamesJson.games[i].players});
+   }
+ }, 50);
+
 
 http.listen(3000, function() {
    console.log('listening on localhost:3000');
 });
 
-
 function createNewGame(data) {
-   data.gameID = gamesJson.games.length+1;
+   data.gameID = gamesJson.games.length;
+   data.players = {};
    gamesJson.games.push(data);
-   return gamesJson.games.length;
+   return gamesJson.games.length-1;
 }
 
 function getGameFromGameID(gameID){
@@ -149,4 +238,61 @@ function getGameFromGameID(gameID){
       }
    }
    return null;
+}
+function getGameIndexFromGameID(gameID){
+   console.log("getGameIndexFromGameID "+gameID);
+   console.log(gamesJson);
+   if(gameID){
+      for (var i = 0; i < gamesJson.games.length; i++) { 
+         if(gamesJson.games[i].gameID == gameID){
+            return i;
+         }
+      }
+   }
+   return null;
+}
+
+function passwordIsCorrect(pass,gameID){
+   console.log("passwordIsCorrect "+pass+" "+gameID);
+   if(typeof gameID != "undefined"){
+      if(typeof pass != "undefined"){
+         console.log("getting game...");
+         var game = getGameFromGameID(gameID);
+         if(game!=null){
+            if(game.password == pass){
+               return true;
+            }
+         }
+      }
+   }
+   console.log("returning false");
+   return false;
+}
+
+function addPlayerToGame(name,gameID){
+   console.log("addPlayerToGame "+gameID+" "+name);
+   if(typeof gameID != "undefined"){
+      if(typeof name != "undefined"){
+         var gameIndex = getGameIndexFromGameID(gameID);
+         gamesJson.games[gameIndex].players[name] = {x:0,y:0};
+         return true;
+      }
+   }
+   return false;
+}
+
+function validateUser(gameID,name,pass){
+   console.log("validateUser "+gameID+", "+name+", "+pass);
+   if(passwordIsCorrect(pass,gameID)){
+      var gameIndex = getGameIndexFromGameID(gameID);
+      if(gamesJson.games[gameIndex].players != null){
+         console.log("validateUser "+gameID+", "+name+", "+pass+" going through players");
+         console.log("gamesJson.games[gameIndex].players ");
+         console.log(gamesJson.games[gameIndex].players);
+         if(typeof(gamesJson.games[gameIndex].players[name]) != "undefined"){
+               return true;
+         }
+      }
+   }
+   return false;
 }
