@@ -67,7 +67,12 @@
     <script>
         /////////////variables//////////////
         var players = {};
-        var image = new Image();
+        var map = {};
+        var images = [];
+        var width = 0;
+        var height = 0;
+        var canvasWidth = 800;
+        var canvasHeight = 400;
 
 
 
@@ -76,8 +81,8 @@
         var myGameArea = {
             canvas : document.createElement("canvas"),
             start : function() {
-                this.canvas.width = 800;
-                this.canvas.height = 400;
+                this.canvas.width = canvasWidth;
+                this.canvas.height = canvasHeight;
                 this.context = this.canvas.getContext("2d");
                 document.body.appendChild(this.canvas);
                 this.interval = setInterval(updateGameArea, 20);
@@ -92,12 +97,39 @@
         function updateGameArea() {
             myGameArea.clear();
             drawPlayers();
+            drawMap();
         }
         function drawPlayers(){
             for (var key in players) {
                 if (players.hasOwnProperty(key)) {
-                    image.src = '/images/'+players[key].character+'_'+players[key].movementDirection+".PNG";
-                    myGameArea.context.drawImage(image, players[key].x, players[key].y, 30, 50);
+                    images[key] = new Image();
+                    images[key].src = '/images/ninja_'+players[key].movementDirection+'_'+players[key].color+".PNG";
+                    if(players[key].movementDirection=="right"){
+                        width = 66;
+                        height = 48;
+                    }else if(players[key].movementDirection=="left"){
+                        width = 66;
+                        height = 48;
+                    }else if(players[key].movementDirection=="jump"){
+                        width = 55;
+                        height = 70;
+                    }else{
+                        width = 31;
+                        height = 64;
+                    }
+                    myGameArea.context.drawImage(images[key], players[key].x-width/2.0, players[key].y-height, width, height);
+                    myGameArea.context.fillStyle = "green";
+                    myGameArea.context.fillRect(players[key].x-15, players[key].y-64-10, 30, 5);
+                }
+            }
+        }
+        function drawMap(){
+            if(map.hasOwnProperty("blocks")){
+                for (var key in map.blocks) {
+                    if (map.blocks.hasOwnProperty(key)) {
+                        myGameArea.context.fillStyle = "black";
+                        myGameArea.context.fillRect(map.blocks[key].x-map.blocks[key].width/2.0,map.blocks[key].y-map.blocks[key].height, map.blocks[key].width, map.blocks[key].height);
+                    }
                 }
             }
         }
@@ -232,14 +264,20 @@
         socket.on('validation', function(data) {
             console.log("validation");
             console.log(data);
+            map = data.map;
         });
         socket.on('welcomeMe', function(data) {
             console.log("welcomeMe");
             console.log(data);
         });
         socket.on('playersPositions', function(data) {
+            //console.log("playersPositions");
+            //console.log(data);
             players = data.players;
         });
+
+
+
     </script>
 
 </html>

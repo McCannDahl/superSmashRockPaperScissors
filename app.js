@@ -18,6 +18,8 @@ app.set('view engine', 'ejs');
 ///////////variables//////////////
 var gamesJson = {games:[]};
 var socketNumber = 0;
+var canvasWidth = 800;
+var canvasHeight = 400;
 
 
 ///////////routes/////////////////
@@ -45,7 +47,7 @@ app.post('/getGamesData', function(req, res) {
       game.time = gamesJson.games[i].time;
       game.lives = gamesJson.games[i].lives;
       game.privatePublic = gamesJson.games[i].privatePublic;
-      game.map = gamesJson.games[i].map;
+      game.mapID = gamesJson.games[i].mapID;
       game.gameID = gamesJson.games[i].gameID;
       data.games.push(game);
    }
@@ -87,7 +89,7 @@ app.post('/createNewGame', function(req, res) {
       lives:req.body.lives,
       privatePublic:req.body.privatePublic,
       password:req.body.password,
-      map:req.body.map,
+      mapID:req.body.mapID,
    };
    var isTherePassword = false;
    if(data.password){
@@ -110,12 +112,13 @@ app.post('/joinSpecificGame', function(req, res) {
       password:req.body.password,
       gameID:req.body.gameID,
       myName:req.body.myName,
+      color:req.body.color,
    };
    console.log("joinSpecificGame");
    console.log(data);
    //todo check to see if player name is taken
    if(passwordIsCorrect(data.password,data.gameID)){
-      if(addPlayerToGame(data.myName,data.gameID)){
+      if(addPlayerToGame(data.myName,data.gameID,data.color)){
          res.render('game',{gameID:data.gameID,name:data.myName,password:data.password});
          console.log("added player");
          console.log(gamesJson);
@@ -138,13 +141,34 @@ io.on('connection', function(socket) {
    var name = null;
    var password = null;
    var isValid = false;
+   var keysAccX = 0;
+   var keysAccY = 0;
+   var dragAccX = 0;
+   var dragAccY = 0;
+   var frictionAccX = 0;
+   var frictionAccY = 0;
+   var gravity = 3;
    var velX = 0;
+   var velY = 0;
    var leftKeyDown = false;
    var rightKeyDown = false;
+   var canJump = true;
+   var ongound = false;
+   var tryingToJump = false;
+   var mapID = 0;
+   var map = {};
+   var width = 0;
+   var height = 0;
+   var x = 300;
+   var y = 0;
+   var movementDirection = "front";
+   var collisionSideThickness = 8;
+   var collided = false;
 
    socketNumber++;
    socket.on('disconnect', function () {
       console.log('A user disconnected '+mySocketNumber);
+      isValid = false;
    });
    socket.on('validate', function (data) {
       console.log('validating user');
@@ -152,11 +176,13 @@ io.on('connection', function(socket) {
          gameID = data.gameID;
          name = data.name;
          password = password;
-         isValid = true;
          socket.join("room-"+gameID);
          console.log("user is valid");
-         socket.emit('validation',{ valid: true});
          io.sockets.in("room-"+gameID).emit('welcomeMe',{name:name});
+         mapID = gamesJson.games[gameID].mapID;
+         map = getMap(mapID);
+         socket.emit('validation',{ valid: true,map:map});
+         isValid = true;
       }else{
          console.log("user is not vlaid");
          socket.emit('validation',{ valid: false});
@@ -165,16 +191,22 @@ io.on('connection', function(socket) {
 
 
    socket.on('leftKeyPressed', function () {
-      velX = -2;
-      gamesJson.games[gameID].players[name].movementDirection = "left";
+      keysAccX = -2.5;
+      movementDirection = "left";
    });
    socket.on('rightKeyPressed', function () {
-      velX = 2;
-      gamesJson.games[gameID].players[name].movementDirection = "right";
+      keysAccX = 2.5;
+      movementDirection = "right";
    });
    socket.on('upKeyPressed', function () {
+      if(canJump){
+         velY = -25;
+         movementDirection = "jump";
+         canJump = false;
+      }
    });
    socket.on('downKeyPressed', function () {
+      keysAccY = 3;
    });
    socket.on('rockKeyPressed', function () {
    });
@@ -184,17 +216,19 @@ io.on('connection', function(socket) {
    });
    socket.on('leftKeyReleased', function () {
       leftKeyDown = false;
-      velX = 0;
-      gamesJson.games[gameID].players[name].movementDirection = "front";
+      keysAccX = 0;
+      movementDirection = "front";
    });
    socket.on('rightKeyReleased', function () {
       rightKeyDown = false;
-      velX = 0;
-      gamesJson.games[gameID].players[name].movementDirection = "front";
+      keysAccX = 0;
+      movementDirection = "front";
    });
    socket.on('upKeyReleased', function () {
+      keysAccY = 0;
    });
    socket.on('downKeyReleased', function () {
+      keysAccY = 0;
    });
    socket.on('rockKeyReleased', function () {
    });
@@ -203,12 +237,208 @@ io.on('connection', function(socket) {
    socket.on('scissorsKeyReleased', function () {
    });
 
-   //////////////update position/////////////
+   //////////////update position function/////////////
    setInterval(function() {
       if(isValid && gamesJson.games[gameID]){
-         gamesJson.games[gameID].players[name].x += velX;
+
+         //////////////Drag calc/////////////
+         calculateDrag();
+         function calculateDrag(){
+            if(velX>0){
+               dragAccX = -.2*velX;
+            }else if(velX<0){
+               dragAccX = -.2*velX;
+            }else{
+               dragAccX = 0;
+            }
+
+
+            if(velY>0){
+               //dragAccY = -.2*velY;
+               dragAccY = 0;
+            }else if(velY<0){
+               //dragAccY = -.2*velY;
+               dragAccY = 0;
+            }else{
+               dragAccY = 0;
+            }
+         }
+
+
+         //////////////update velocities/////////////
+         updateVelocity();
+         function updateVelocity(){
+            velX += keysAccX + dragAccX + frictionAccX;
+            velY += keysAccY + dragAccY + frictionAccY + gravity;
+            
+            if(velX>-.2 && velX<.2 ){
+               velX = 0;
+            }
+            if(velY>-.2 && velY<.2 ){
+               velY = 0;
+            }
+            
+         }
+         
+         //////////////update position/////////////
+         x += velX;
+         y += velY;
+
+         //////////////check for collisions with blocks/////////////
+         if(isValid == true){
+            frictionAccX = 0;
+            frictionAccY = 0;
+            setWidthAndHeight();
+            if(map.hasOwnProperty("blocks")){
+               for (var key in map.blocks) {
+                  collided = false;
+                  if(blocksCollide(getBottomSide(),map.blocks[key]) && !collided){
+                     //if(canJump==false && velY<0){
+                        //trying to jump?
+                     //   console.log("are you trying to jump?");
+                     //}else{
+                        y = map.blocks[key].y - map.blocks[key].height;
+                        collided = true;
+                        velY = 0;
+                        accY = 0;
+                        canJump = true;
+                        if(movementDirection == "jump"){
+                           movementDirection = "front";
+                        }
+                        if(velX>0){
+                           frictionAccX = -0.2;
+                        }
+                        if(velX<0){
+                           frictionAccX = 0.2;
+                        }
+                     //}
+                  }
+                  if(blocksCollide(getTopSide(),map.blocks[key]) && !collided){
+                     y = map.blocks[key].y + height;
+                     collided = true;
+                     velY = 0;
+                     accY = 0;
+                     if(velX>0){
+                        frictionAccX = -0.2;
+                     }
+                     if(velX<0){
+                        frictionAccX = 0.2;
+                     }
+                  }
+                  if(blocksCollide(getLeftSide(),map.blocks[key]) && !collided){
+                     x = map.blocks[key].x+map.blocks[key].width/2.0+width/2.0;
+                     collided = true;
+                     velX = 0;
+                     accX = 0;
+                     if(velY>0){
+                        frictionAccY = -0.2;
+                     }
+                     if(velY<0){
+                        frictionAccY = 0.2;
+                     }
+                  }
+                  if(blocksCollide(getRightSide(),map.blocks[key]) && !collided){
+                     x = map.blocks[key].x-map.blocks[key].width/2.0-width/2.0;
+                     collided = true;
+                     velX = 0;
+                     accX = 0;
+                     if(velY>0){
+                        frictionAccY = -0.2;
+                     }
+                     if(velY<0){
+                        frictionAccY = 0.2;
+                     }
+                  }
+               }
+            }
+         }
+
+         function setWidthAndHeight(){
+            if(movementDirection=="right"){
+               width = 66;
+               height = 48;
+           }else if(movementDirection=="left"){
+               width = 66;
+               height = 48;
+           }else if(movementDirection=="jump"){
+               width = 55;
+               height = 70;
+           }else{
+               width = 31;
+               height = 64;
+           }
+         }
+
+         function getLeftSide(){
+            var side = {};
+            side.x = x-width/2.0+collisionSideThickness/2.0;
+            side.y = y-collisionSideThickness;
+            side.width = collisionSideThickness;
+            side.height = height-collisionSideThickness*2;
+            return side;
+         }
+         function getRightSide(){
+            var side = {};
+            side.x = x+width/2.0-collisionSideThickness/2.0;
+            side.y = y-collisionSideThickness;
+            side.width = collisionSideThickness;
+            side.height = height-collisionSideThickness*2;
+            return side;
+         }
+         function getTopSide(){
+            var side = {};
+            side.x = x;
+            side.y = y-height+collisionSideThickness;
+            side.width = width-collisionSideThickness*2;
+            side.height = collisionSideThickness;
+            return side;
+         }
+         function getBottomSide(){
+            var side = {};
+            side.x = x;
+            side.y = y;
+            side.width = width-collisionSideThickness*2;
+            side.height = collisionSideThickness;
+            return side;
+         }
+         function blocksCollide(side,block){
+            if(side.x+side.width/2.0 > block.x-block.width/2.0){
+               if(side.x-side.width/2.0 < block.x+block.width/2.0){
+                  if(side.y > block.y-block.height){
+                     if(side.y-side.height < block.y){
+                        return true;
+                     }
+                  }
+               }
+            }
+            return false;
+         }
+         
+         /*
+         if(gamesJson.games[gameID].players[name].y>=400){
+            gamesJson.games[gameID].players[name].y = 400;
+            velY = 0;
+            accY = 0;
+            if(gamesJson.games[gameID].players[name].movementDirection == "jump"){
+               gamesJson.games[gameID].players[name].movementDirection = "front";
+            }
+            canJump = true;
+            if(velX>0){
+               frictionAccX = -0.2;
+            }
+            if(velX<0){
+               frictionAccX = 0.2;
+            }
+         }
+         */
+
+         /////////////update actual variables///////////
+         gamesJson.games[gameID].players[name].movementDirection = movementDirection;
+         gamesJson.games[gameID].players[name].x = x;
+         gamesJson.games[gameID].players[name].y = y;
+   
       }
-   }, 50);
+   }, 30);
 
 });
 
@@ -217,7 +447,7 @@ setInterval(function() {
    for (var i = 0; i < gamesJson.games.length; i++) {
       io.sockets.in("room-"+gamesJson.games[i].gameID).emit('playersPositions',{players:gamesJson.games[i].players});
    }
- }, 50);
+ }, 30);
 
 
 http.listen(3000, function() {
@@ -273,15 +503,15 @@ function passwordIsCorrect(pass,gameID){
    return false;
 }
 
-function addPlayerToGame(name,gameID){
+function addPlayerToGame(name,gameID,color){
    console.log("addPlayerToGame "+gameID+" "+name);
    if(typeof gameID != "undefined"){
       if(typeof name != "undefined"){
          var gameIndex = getGameIndexFromGameID(gameID);
          gamesJson.games[gameIndex].players[name] = {
-            x:0,
-            y:0,
-            character:"geraff",
+            x:500,
+            y:100,
+            color:color,
             movementDirection:"front"
          };
          return true;
@@ -304,4 +534,25 @@ function validateUser(gameID,name,pass){
       }
    }
    return false;
+}
+
+function getMap(mapID){
+   //if(mapID == 1){
+      var map = {};
+      map.blocks = [];
+      //remember x is in the middle and y is on the bottom
+      map.blocks.push({
+         x:canvasWidth/2,
+         y:canvasHeight+180,
+         width:canvasWidth-100,
+         height:200
+      });
+      map.blocks.push({
+         x:canvasWidth/2,
+         y:canvasHeight-100,
+         width:100,
+         height:10
+      });
+      return map;
+   //}
 }
