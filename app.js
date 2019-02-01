@@ -169,6 +169,8 @@ io.on('connection', function(socket) {
    var leftKeyPressed = false;
    var rightKeyPressed = false;
    var action = "";
+   var actionObject = {x:0,y:0,width:0,height:0};
+   var oponent = {};
 
    socketNumber++;
    socket.on('disconnect', function () {
@@ -570,7 +572,113 @@ io.on('connection', function(socket) {
          //////////////check for collisions with death lines/////////////
          
          //////////////check for collisions of action with other players/////////////
+         function checkForCollisionsWithActions(){
+            if(isValid == true && action!=""){
+               setWidthHeightXAndYOfAction();
+               if(gamesJson.games[gameID].hasOwnProperty("players")){
+                  for (var key in gamesJson.games[gameID].players) {
+                     if(key != name){
+                        oponent = gamesJson.games[gameID].players[key];
+                        setWidthAndHeightOfOpponent();
+                        if(actionsCollide()){
+                           if(actionDirection == "left"){
+                              //make oponent fly right
+                              getHit(key,"right");
+                           }else if(actionDirection == "right"){
+                              getHit(key,"left");
+                           }else if(actionDirection == "up"){
+                              getHit(key,"down");
+                           }else if(actionDirection == "down"){
+                              getHit(key,"up");
+                           }
+                           unsetAction();
+                        }
+                     }
+                  }
+               }
+            }
+   
+            function setWidthAndHeightOfOpponent(){
+               if(oponent.movementDirection=="right"){
+                  oponent.width = 66;
+                  oponent.height = 48;
+              }else if(oponent.movementDirection=="left"){
+                  oponent.width = 66;
+                  oponent.height = 48;
+              }else if(oponent.movementDirection=="jump"){
+                  oponent.width = 55;
+                  oponent.height = 70;
+              }else{
+                  oponent.width = 31;
+                  oponent.height = 64;
+              }
+            }
+            function setWidthHeightXAndYOfAction(){
+               if(actionDirection=="right"){
+                  actionObject.x = 33-5;
+                  actionObject.y = -24+10;
+               }else if(actionDirection=="left"){
+                  actionObject.x = -33+5;
+                  actionObject.y = -24+10;
+               }else if(actionDirection=="up"){
+                  actionObject.x = 0;
+                  actionObject.y = -72+20;
+               }else if(actionDirection=="down"){
+                  actionObject.x = 0;
+                  actionObject.y = 10;
+               }
+               actionObject.x += x;
+               actionObject.y += y;
+               actionObject.width = 20;
+               actionObject.height = 20;
+
+            }
+            function actionsCollide(){
+               if(oponent.x+oponent.width/2.0 > actionObject.x-actionObject.width/2.0){
+                  if(oponent.x-oponent.width/2.0 < actionObject.x+actionObject.width/2.0){
+                     if(oponent.y > actionObject.y-actionObject.height){
+                        if(oponent.y-oponent.height < actionObject.y){
+                           return true;
+                        }
+                     }
+                  }
+               }
+               return false;
+            }
+         }
+         checkForCollisionsWithActions();
          
+         function getHit(key,direction){
+
+            if(action != ""){
+
+               var power = 0;
+               var damage = 0;
+
+               if(action == "rock"){
+                  power = .5;
+                  damage = .5;
+               }else if(action == "paper"){
+                  power = .5;
+                  damage = .5;
+               }else if(action == "scissors"){
+                  power = .5;
+                  damage = .5;
+               }
+
+               if(direction == "right"){
+                  
+               }else if(direction == "left"){
+                  
+               }else if(direction == "up"){
+                  
+               }else if(direction == "down"){
+                  
+               }
+               //gamesJson.games[gameID].players[name].health -= gamesJson.games[gameID].players[name].health*damage;
+            }
+         }
+
          /////////////update actual variables///////////
          gamesJson.games[gameID].players[name].movementDirection = movementDirection;
          gamesJson.games[gameID].players[name].actionDirection = actionDirection;

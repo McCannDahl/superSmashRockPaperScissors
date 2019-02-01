@@ -134,17 +134,17 @@
                         actionImages[key] = new Image();
                         actionImages[key].src = '/images/'+players[key].action+'1.PNG';
                         if(players[key].actionDirection=="right"){
-                            actionX = 33-10;
+                            actionX = 33-5;
                             actionY = -24+10;
                         }else if(players[key].actionDirection=="left"){
-                            actionX = -33+10;
+                            actionX = -33+5;
                             actionY = -24+10;
                         }else if(players[key].actionDirection=="up"){
                             actionX = 0;
-                            actionY = -70+20;
+                            actionY = -72+20;
                         }else if(players[key].actionDirection=="down"){
                             actionX = 0;
-                            actionY = 0-20;
+                            actionY = 10;
                             console.log(players[key].actionDirection);
                         }
                         myGameArea.context.drawImage(actionImages[key], players[key].x+actionX-10, players[key].y+actionY-20, 20, 20);
