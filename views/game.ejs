@@ -69,8 +69,11 @@
         var players = {};
         var map = {};
         var images = [];
+        var actionImages = [];
         var width = 0;
         var height = 0;
+        var actionX = 0;
+        var actionY = 0;
         var canvasWidth = 800;
         var canvasHeight = 400;
 
@@ -97,6 +100,7 @@
         function updateGameArea() {
             myGameArea.clear();
             drawPlayers();
+            drawActions();
             drawMap();
         }
         function drawPlayers(){
@@ -120,6 +124,32 @@
                     myGameArea.context.drawImage(images[key], players[key].x-width/2.0, players[key].y-height, width, height);
                     myGameArea.context.fillStyle = "green";
                     myGameArea.context.fillRect(players[key].x-15, players[key].y-64-10, 30, 5);
+                }
+            }
+        }
+        function drawActions(){
+            for (var key in players) {
+                if (players.hasOwnProperty(key)) {
+                    if(players[key].action != ""){
+                        actionImages[key] = new Image();
+                        actionImages[key].src = '/images/'+players[key].action+'1.PNG';
+                        if(players[key].actionDirection=="right"){
+                            actionX = 33-10;
+                            actionY = -24+10;
+                        }else if(players[key].actionDirection=="left"){
+                            actionX = -33+10;
+                            actionY = -24+10;
+                        }else if(players[key].actionDirection=="up"){
+                            actionX = 0;
+                            actionY = -70+20;
+                        }else if(players[key].actionDirection=="down"){
+                            actionX = 0;
+                            actionY = 0-20;
+                            console.log(players[key].actionDirection);
+                        }
+                        myGameArea.context.drawImage(actionImages[key], players[key].x+actionX-10, players[key].y+actionY-20, 20, 20);
+                
+                    }
                 }
             }
         }

@@ -150,11 +150,7 @@ io.on('connection', function(socket) {
    var gravity = 3;
    var velX = 0;
    var velY = 0;
-   var leftKeyDown = false;
-   var rightKeyDown = false;
    var canJump = true;
-   var ongound = false;
-   var tryingToJump = false;
    var mapID = 0;
    var map = {};
    var width = 0;
@@ -162,8 +158,17 @@ io.on('connection', function(socket) {
    var x = 300;
    var y = 0;
    var movementDirection = "front";
+   var actionDirection = "";
    var collisionSideThickness = 8;
    var collided = false;
+   var rockKeyPressed = false;
+   var paperKeyPressed = false;
+   var scissorsKeyPressed = false;
+   var upKeyPressed = false;
+   var downKeyPressed = false;
+   var leftKeyPressed = false;
+   var rightKeyPressed = false;
+   var action = "";
 
    socketNumber++;
    socket.on('disconnect', function () {
@@ -191,58 +196,198 @@ io.on('connection', function(socket) {
 
 
    socket.on('leftKeyPressed', function () {
-      keysAccX = -2.5;
-      movementDirection = "left";
+      leftKeyPressed = true;
+      setAction();
    });
    socket.on('rightKeyPressed', function () {
-      keysAccX = 2.5;
-      movementDirection = "right";
+      rightKeyPressed = true;
+      setAction();
    });
    socket.on('upKeyPressed', function () {
-      if(canJump){
-         velY = -25;
-         movementDirection = "jump";
-         canJump = false;
-      }
+      upKeyPressed = true;
+      setAction();
    });
    socket.on('downKeyPressed', function () {
-      keysAccY = 3;
+      downKeyPressed = true;
+      setAction();
    });
    socket.on('rockKeyPressed', function () {
+      rockKeyPressed = true;
+      setAction();
    });
    socket.on('paperKeyPressed', function () {
+      paperKeyPressed = true;
+      setAction();
    });
    socket.on('scissorsKeyPressed', function () {
+      scissorsKeyPressed = true;
+      setAction();
    });
    socket.on('leftKeyReleased', function () {
-      leftKeyDown = false;
+      leftKeyPressed = false;
       keysAccX = 0;
-      movementDirection = "front";
+      if(action==""){
+         movementDirection = "front";
+         if(downKeyPressed){
+            movementDirection = "down";
+         }
+         if(leftKeyPressed){
+            keysAccX = -2.5;
+            movementDirection = "left";
+         }
+         if(rightKeyPressed){
+            keysAccX = 2.5;
+            movementDirection = "right";
+         }
+         if(upKeyPressed){
+            if(canJump && !rockKeyPressed && !paperKeyPressed && !scissorsKeyPressed){
+               velY = -25;
+               movementDirection = "jump";
+               canJump = false;
+            }
+         }
+         if(downKeyPressed){
+            keysAccY = 3;
+         }
+      }
    });
    socket.on('rightKeyReleased', function () {
-      rightKeyDown = false;
+      rightKeyPressed = false;
       keysAccX = 0;
-      movementDirection = "front";
+      if(action==""){
+         movementDirection = "front";
+         if(downKeyPressed){
+            movementDirection = "down";
+         }
+         if(leftKeyPressed){
+            keysAccX = -2.5;
+            movementDirection = "left";
+         }
+         if(rightKeyPressed){
+            keysAccX = 2.5;
+            movementDirection = "right";
+         }
+         if(upKeyPressed){
+            if(canJump && !rockKeyPressed && !paperKeyPressed && !scissorsKeyPressed){
+               velY = -25;
+               movementDirection = "jump";
+               canJump = false;
+            }
+         }
+         if(downKeyPressed){
+            keysAccY = 3;
+         }
+      }
    });
    socket.on('upKeyReleased', function () {
+      upKeyPressed = false;
       keysAccY = 0;
    });
    socket.on('downKeyReleased', function () {
+      downKeyPressed = false;
       keysAccY = 0;
    });
    socket.on('rockKeyReleased', function () {
+      rockKeyPressed = false;
    });
    socket.on('paperKeyReleased', function () {
+      paperKeyPressed = false;
    });
    socket.on('scissorsKeyReleased', function () {
+      scissorsKeyPressed = false;
    });
+
+   //////////////set and unset actions functions/////////////
+   function setAction(){
+      if(action == "" && (upKeyPressed || downKeyPressed || leftKeyPressed || rightKeyPressed)){
+         if(rockKeyPressed){
+            action = "rock";
+            setTimeout(unsetAction, 1000);
+         }else if(paperKeyPressed){
+            action = "paper";
+            setTimeout(unsetAction, 1000);
+         }else if(scissorsKeyPressed){
+            action = "scissors";
+            setTimeout(unsetAction, 1000);
+         }else{
+            movementDirection = "front";
+            if(downKeyPressed){
+               keysAccY = 3;
+               movementDirection = "down";
+            }
+            if(upKeyPressed){
+               if(canJump && !rockKeyPressed && !paperKeyPressed && !scissorsKeyPressed){
+                  velY = -25;
+                  movementDirection = "jump";
+                  canJump = false;
+               }
+            }
+            if(leftKeyPressed){
+               keysAccX = -2.5;
+               movementDirection = "left";
+            }
+            if(rightKeyPressed){
+               keysAccX = 2.5;
+               movementDirection = "right";
+            }
+         }
+         if(rockKeyPressed || paperKeyPressed || scissorsKeyPressed){
+            if(downKeyPressed){
+               actionDirection = "down";
+            }
+            if(upKeyPressed){
+               movementDirection = "jump";
+               actionDirection = "up";
+            }
+            if(leftKeyPressed){
+               movementDirection = "left";
+               actionDirection = "left";
+            }
+            if(rightKeyPressed){
+               movementDirection = "right";
+               actionDirection = "right";
+            }
+         }
+      }
+   }
+   function unsetAction(){
+      action = "";
+      actionDirection = "";
+      movementDirection = "front";
+      if(downKeyPressed){
+         movementDirection = "down";
+      }
+      if(leftKeyPressed){
+         keysAccX = -2.5;
+         movementDirection = "left";
+      }
+      if(rightKeyPressed){
+         keysAccX = 2.5;
+         movementDirection = "right";
+      }
+      if(upKeyPressed){
+         if(canJump && !rockKeyPressed && !paperKeyPressed && !scissorsKeyPressed){
+            velY = -25;
+            movementDirection = "jump";
+            canJump = false;
+         }
+      }
+      if(downKeyPressed){
+         keysAccY = 3;
+      }
+   }
 
    //////////////update position function/////////////
    setInterval(function() {
       if(isValid && gamesJson.games[gameID]){
 
+         //////////////Set Action/////////////
+         if(action != ""){
+            keysAccX = 0;
+            keysAccY = 0;
+         }
+
          //////////////Drag calc/////////////
-         calculateDrag();
          function calculateDrag(){
             if(velX>0){
                dragAccX = -.2*velX;
@@ -263,10 +408,10 @@ io.on('connection', function(socket) {
                dragAccY = 0;
             }
          }
-
+         calculateDrag();
+         
 
          //////////////update velocities/////////////
-         updateVelocity();
          function updateVelocity(){
             velX += keysAccX + dragAccX + frictionAccX;
             velY += keysAccY + dragAccY + frictionAccY + gravity;
@@ -279,163 +424,159 @@ io.on('connection', function(socket) {
             }
             
          }
+         updateVelocity();
          
          //////////////update position/////////////
          x += velX;
          y += velY;
 
          //////////////check for collisions with blocks/////////////
-         if(isValid == true){
-            frictionAccX = 0;
-            frictionAccY = 0;
-            setWidthAndHeight();
-            if(map.hasOwnProperty("blocks")){
-               for (var key in map.blocks) {
-                  collided = false;
-                  if(blocksCollide(getBottomSide(),map.blocks[key]) && !collided){
-                     //if(canJump==false && velY<0){
-                        //trying to jump?
-                     //   console.log("are you trying to jump?");
-                     //}else{
-                        y = map.blocks[key].y - map.blocks[key].height;
+         function checkForCollisionsWithBlocks(){
+            if(isValid == true){
+               frictionAccX = 0;
+               frictionAccY = 0;
+               setWidthAndHeight();
+               if(map.hasOwnProperty("blocks")){
+                  for (var key in map.blocks) {
+                     collided = false;
+                     if(blocksCollide(getBottomSide(),map.blocks[key]) && !collided){
+                        //if(canJump==false && velY<0){
+                           //trying to jump?
+                        //   console.log("are you trying to jump?");
+                        //}else{
+                           y = map.blocks[key].y - map.blocks[key].height;
+                           collided = true;
+                           velY = 0;
+                           accY = 0;
+                           canJump = true;
+                           if(movementDirection == "jump"){
+                              movementDirection = "front";
+                           }
+                           if(velX>0){
+                              frictionAccX = -0.2;
+                           }
+                           if(velX<0){
+                              frictionAccX = 0.2;
+                           }
+                        //}
+                     }
+                     if(blocksCollide(getTopSide(),map.blocks[key]) && !collided){
+                        y = map.blocks[key].y + height;
                         collided = true;
                         velY = 0;
                         accY = 0;
-                        canJump = true;
-                        if(movementDirection == "jump"){
-                           movementDirection = "front";
-                        }
                         if(velX>0){
                            frictionAccX = -0.2;
                         }
                         if(velX<0){
                            frictionAccX = 0.2;
                         }
-                     //}
-                  }
-                  if(blocksCollide(getTopSide(),map.blocks[key]) && !collided){
-                     y = map.blocks[key].y + height;
-                     collided = true;
-                     velY = 0;
-                     accY = 0;
-                     if(velX>0){
-                        frictionAccX = -0.2;
                      }
-                     if(velX<0){
-                        frictionAccX = 0.2;
+                     if(blocksCollide(getLeftSide(),map.blocks[key]) && !collided){
+                        x = map.blocks[key].x+map.blocks[key].width/2.0+width/2.0;
+                        collided = true;
+                        velX = 0;
+                        accX = 0;
+                        if(velY>0){
+                           frictionAccY = -0.2;
+                        }
+                        if(velY<0){
+                           frictionAccY = 0.2;
+                        }
                      }
-                  }
-                  if(blocksCollide(getLeftSide(),map.blocks[key]) && !collided){
-                     x = map.blocks[key].x+map.blocks[key].width/2.0+width/2.0;
-                     collided = true;
-                     velX = 0;
-                     accX = 0;
-                     if(velY>0){
-                        frictionAccY = -0.2;
-                     }
-                     if(velY<0){
-                        frictionAccY = 0.2;
-                     }
-                  }
-                  if(blocksCollide(getRightSide(),map.blocks[key]) && !collided){
-                     x = map.blocks[key].x-map.blocks[key].width/2.0-width/2.0;
-                     collided = true;
-                     velX = 0;
-                     accX = 0;
-                     if(velY>0){
-                        frictionAccY = -0.2;
-                     }
-                     if(velY<0){
-                        frictionAccY = 0.2;
+                     if(blocksCollide(getRightSide(),map.blocks[key]) && !collided){
+                        x = map.blocks[key].x-map.blocks[key].width/2.0-width/2.0;
+                        collided = true;
+                        velX = 0;
+                        accX = 0;
+                        if(velY>0){
+                           frictionAccY = -0.2;
+                        }
+                        if(velY<0){
+                           frictionAccY = 0.2;
+                        }
                      }
                   }
                }
             }
-         }
-
-         function setWidthAndHeight(){
-            if(movementDirection=="right"){
-               width = 66;
-               height = 48;
-           }else if(movementDirection=="left"){
-               width = 66;
-               height = 48;
-           }else if(movementDirection=="jump"){
-               width = 55;
-               height = 70;
-           }else{
-               width = 31;
-               height = 64;
-           }
-         }
-
-         function getLeftSide(){
-            var side = {};
-            side.x = x-width/2.0+collisionSideThickness/2.0;
-            side.y = y-collisionSideThickness;
-            side.width = collisionSideThickness;
-            side.height = height-collisionSideThickness*2;
-            return side;
-         }
-         function getRightSide(){
-            var side = {};
-            side.x = x+width/2.0-collisionSideThickness/2.0;
-            side.y = y-collisionSideThickness;
-            side.width = collisionSideThickness;
-            side.height = height-collisionSideThickness*2;
-            return side;
-         }
-         function getTopSide(){
-            var side = {};
-            side.x = x;
-            side.y = y-height+collisionSideThickness;
-            side.width = width-collisionSideThickness*2;
-            side.height = collisionSideThickness;
-            return side;
-         }
-         function getBottomSide(){
-            var side = {};
-            side.x = x;
-            side.y = y;
-            side.width = width-collisionSideThickness*2;
-            side.height = collisionSideThickness;
-            return side;
-         }
-         function blocksCollide(side,block){
-            if(side.x+side.width/2.0 > block.x-block.width/2.0){
-               if(side.x-side.width/2.0 < block.x+block.width/2.0){
-                  if(side.y > block.y-block.height){
-                     if(side.y-side.height < block.y){
-                        return true;
+   
+            function setWidthAndHeight(){
+               if(movementDirection=="right"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="left"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="jump"){
+                  width = 55;
+                  height = 70;
+              }else{
+                  width = 31;
+                  height = 64;
+              }
+            }
+   
+            function getLeftSide(){
+               var side = {};
+               side.x = x-width/2.0+collisionSideThickness/2.0;
+               side.y = y-collisionSideThickness;
+               side.width = collisionSideThickness;
+               side.height = height-collisionSideThickness*2;
+               return side;
+            }
+            function getRightSide(){
+               var side = {};
+               side.x = x+width/2.0-collisionSideThickness/2.0;
+               side.y = y-collisionSideThickness;
+               side.width = collisionSideThickness;
+               side.height = height-collisionSideThickness*2;
+               return side;
+            }
+            function getTopSide(){
+               var side = {};
+               side.x = x;
+               side.y = y-height+collisionSideThickness;
+               side.width = width-collisionSideThickness*2;
+               side.height = collisionSideThickness;
+               return side;
+            }
+            function getBottomSide(){
+               var side = {};
+               side.x = x;
+               side.y = y;
+               side.width = width-collisionSideThickness*2;
+               side.height = collisionSideThickness;
+               return side;
+            }
+            function blocksCollide(side,block){
+               if(side.x+side.width/2.0 > block.x-block.width/2.0){
+                  if(side.x-side.width/2.0 < block.x+block.width/2.0){
+                     if(side.y > block.y-block.height){
+                        if(side.y-side.height < block.y){
+                           return true;
+                        }
                      }
                   }
                }
+               return false;
             }
-            return false;
          }
+         checkForCollisionsWithBlocks();
+
+         //////////////check for collisions with other players/////////////
+         //do this last
+
+
+         //////////////check for collisions with death lines/////////////
          
-         /*
-         if(gamesJson.games[gameID].players[name].y>=400){
-            gamesJson.games[gameID].players[name].y = 400;
-            velY = 0;
-            accY = 0;
-            if(gamesJson.games[gameID].players[name].movementDirection == "jump"){
-               gamesJson.games[gameID].players[name].movementDirection = "front";
-            }
-            canJump = true;
-            if(velX>0){
-               frictionAccX = -0.2;
-            }
-            if(velX<0){
-               frictionAccX = 0.2;
-            }
-         }
-         */
-
+         //////////////check for collisions of action with other players/////////////
+         
          /////////////update actual variables///////////
          gamesJson.games[gameID].players[name].movementDirection = movementDirection;
+         gamesJson.games[gameID].players[name].actionDirection = actionDirection;
          gamesJson.games[gameID].players[name].x = x;
          gamesJson.games[gameID].players[name].y = y;
+         gamesJson.games[gameID].players[name].action = action;
    
       }
    }, 30);
@@ -512,7 +653,9 @@ function addPlayerToGame(name,gameID,color){
             x:500,
             y:100,
             color:color,
-            movementDirection:"front"
+            movementDirection:"front",
+            action:"",
+            actionDirection:""
          };
          return true;
       }
