@@ -123,7 +123,7 @@
                     }
                     myGameArea.context.drawImage(images[key], players[key].x-width/2.0, players[key].y-height, width, height);
                     myGameArea.context.fillStyle = "green";
-                    myGameArea.context.fillRect(players[key].x-15, players[key].y-64-10, 30, 5);
+                    myGameArea.context.fillRect(players[key].x-15, players[key].y-64-10, (players[key].health/100.0)*30, 5);
                 }
             }
         }

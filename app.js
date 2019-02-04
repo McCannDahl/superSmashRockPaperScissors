@@ -145,6 +145,8 @@ io.on('connection', function(socket) {
    var keysAccY = 0;
    var dragAccX = 0;
    var dragAccY = 0;
+   var hitAccX = 0;
+   var hitAccY = 0;
    var frictionAccX = 0;
    var frictionAccY = 0;
    var gravity = 3;
@@ -170,7 +172,7 @@ io.on('connection', function(socket) {
    var rightKeyPressed = false;
    var action = "";
    var actionObject = {x:0,y:0,width:0,height:0};
-   var oponent = {};
+   var health = 100;
 
    socketNumber++;
    socket.on('disconnect', function () {
@@ -415,8 +417,8 @@ io.on('connection', function(socket) {
 
          //////////////update velocities/////////////
          function updateVelocity(){
-            velX += keysAccX + dragAccX + frictionAccX;
-            velY += keysAccY + dragAccY + frictionAccY + gravity;
+            velX += keysAccX + dragAccX + frictionAccX + hitAccX;
+            velY += keysAccY + dragAccY + frictionAccY + hitAccY + gravity;
             
             if(velX>-.2 && velX<.2 ){
                velX = 0;
@@ -428,6 +430,13 @@ io.on('connection', function(socket) {
          }
          updateVelocity();
          
+         if(hitAccX!=0){
+            hitAccX = 0;
+         }
+         if(hitAccY!=0){
+            hitAccY = 0;
+         }
+
          //////////////update position/////////////
          x += velX;
          y += velY;
@@ -573,71 +582,61 @@ io.on('connection', function(socket) {
          
          //////////////check for collisions of action with other players/////////////
          function checkForCollisionsWithActions(){
-            if(isValid == true && action!=""){
-               setWidthHeightXAndYOfAction();
+            if(isValid == true){
+               setWidthAndHeight();
                if(gamesJson.games[gameID].hasOwnProperty("players")){
                   for (var key in gamesJson.games[gameID].players) {
-                     if(key != name){
-                        oponent = gamesJson.games[gameID].players[key];
-                        setWidthAndHeightOfOpponent();
+                     if(key != name && gamesJson.games[gameID].players[key].action != ""){
+                        setWidthHeightXAndYOfAction(key);
                         if(actionsCollide()){
-                           if(actionDirection == "left"){
-                              //make oponent fly right
-                              getHit(key,"right");
-                           }else if(actionDirection == "right"){
-                              getHit(key,"left");
-                           }else if(actionDirection == "up"){
-                              getHit(key,"down");
-                           }else if(actionDirection == "down"){
-                              getHit(key,"up");
-                           }
-                           unsetAction();
+                           getHit(key);
                         }
                      }
                   }
                }
             }
-   
-            function setWidthAndHeightOfOpponent(){
-               if(oponent.movementDirection=="right"){
-                  oponent.width = 66;
-                  oponent.height = 48;
-              }else if(oponent.movementDirection=="left"){
-                  oponent.width = 66;
-                  oponent.height = 48;
-              }else if(oponent.movementDirection=="jump"){
-                  oponent.width = 55;
-                  oponent.height = 70;
+
+            function setWidthAndHeight(){
+               if(movementDirection=="right"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="left"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="jump"){
+                  width = 55;
+                  height = 70;
               }else{
-                  oponent.width = 31;
-                  oponent.height = 64;
+                  width = 31;
+                  height = 64;
               }
             }
-            function setWidthHeightXAndYOfAction(){
-               if(actionDirection=="right"){
+
+            function setWidthHeightXAndYOfAction(key){
+               if(gamesJson.games[gameID].players[key].actionDirection=="right"){
                   actionObject.x = 33-5;
                   actionObject.y = -24+10;
-               }else if(actionDirection=="left"){
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="left"){
                   actionObject.x = -33+5;
                   actionObject.y = -24+10;
-               }else if(actionDirection=="up"){
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="up"){
                   actionObject.x = 0;
                   actionObject.y = -72+20;
-               }else if(actionDirection=="down"){
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="down"){
                   actionObject.x = 0;
                   actionObject.y = 10;
                }
-               actionObject.x += x;
-               actionObject.y += y;
+               actionObject.x += gamesJson.games[gameID].players[key].x;
+               actionObject.y += gamesJson.games[gameID].players[key].y;
                actionObject.width = 20;
                actionObject.height = 20;
 
             }
             function actionsCollide(){
-               if(oponent.x+oponent.width/2.0 > actionObject.x-actionObject.width/2.0){
-                  if(oponent.x-oponent.width/2.0 < actionObject.x+actionObject.width/2.0){
-                     if(oponent.y > actionObject.y-actionObject.height){
-                        if(oponent.y-oponent.height < actionObject.y){
+               if(x+width/2.0 > actionObject.x-actionObject.width/2.0){
+                  if(x-width/2.0 < actionObject.x+actionObject.width/2.0){
+                     if(y > actionObject.y-actionObject.height){
+                        if(y-height < actionObject.y){
                            return true;
                         }
                      }
@@ -648,34 +647,40 @@ io.on('connection', function(socket) {
          }
          checkForCollisionsWithActions();
          
-         function getHit(key,direction){
+         function getHit(key){
 
-            if(action != ""){
+            if(gamesJson.games[gameID].players[key].action != ""){
 
                var power = 0;
                var damage = 0;
 
-               if(action == "rock"){
+               if(gamesJson.games[gameID].players[key].action == "rock"){
+                  power = .8;
+                  damage = .2;
+               }else if(gamesJson.games[gameID].players[key].action == "paper"){
                   power = .5;
                   damage = .5;
-               }else if(action == "paper"){
-                  power = .5;
-                  damage = .5;
-               }else if(action == "scissors"){
-                  power = .5;
-                  damage = .5;
+               }else if(gamesJson.games[gameID].players[key].action == "scissors"){
+                  power = .2;
+                  damage = .8;
                }
 
-               if(direction == "right"){
-                  
-               }else if(direction == "left"){
-                  
-               }else if(direction == "up"){
-                  
-               }else if(direction == "down"){
-                  
+               if(gamesJson.games[gameID].players[key].actionDirection == "right"){
+                  hitAccX = (30*power)*(100/health);
+                  hitAccY = (10*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "left"){
+                  hitAccX = (-30*power)*(100/health);
+                  hitAccY = (10*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "up"){
+                  hitAccY = (-30*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "down"){
+                  hitAccY = (30*power)*(100/health);
                }
-               //gamesJson.games[gameID].players[name].health -= gamesJson.games[gameID].players[name].health*damage;
+
+               health -= health*damage;
+               if(health<1){
+                  health = 1;
+               }
             }
          }
 
@@ -685,6 +690,7 @@ io.on('connection', function(socket) {
          gamesJson.games[gameID].players[name].x = x;
          gamesJson.games[gameID].players[name].y = y;
          gamesJson.games[gameID].players[name].action = action;
+         gamesJson.games[gameID].players[name].health = health;
    
       }
    }, 30);
@@ -763,7 +769,8 @@ function addPlayerToGame(name,gameID,color){
             color:color,
             movementDirection:"front",
             action:"",
-            actionDirection:""
+            actionDirection:"",
+            health: 100,
          };
          return true;
       }
