@@ -171,6 +171,7 @@ io.on('connection', function(socket) {
    var leftKeyPressed = false;
    var rightKeyPressed = false;
    var action = "";
+   var opponent = {x:0,y:0,width:0,height:0};
    var actionObject = {x:0,y:0,width:0,height:0};
    var myActionObject = {x:0,y:0,width:0,height:0};
    var health = 100;
@@ -580,8 +581,148 @@ io.on('connection', function(socket) {
          checkForCollisionsWithBlocks();
 
          //////////////check for collisions with other players/////////////
-         //do this last
+         function checkForCollisionsWithOtherPeople(){
+            if(isValid == true){
+               setWidthAndHeight();
+               if(gamesJson.games[gameID].hasOwnProperty("players")){
+                  for (var key in gamesJson.games[gameID].players) {
+                     if(key != name){
+                        setWidthHeightXAndYOfOpponent(key);
+                        if(peopleCollide(getLeftSide())){
+                           x = opponent.x+opponent.width/2.0+width/2.0;
+                           velX = 0;
+                           accX = 0;
+                           if(velY>0){
+                              frictionAccY = -0.2;
+                           }
+                           if(velY<0){
+                              frictionAccY = 0.2;
+                           }
+                        }else if(peopleCollide(getRightSide())){
+                           x = opponent.x-opponent.width/2.0-width/2.0;
+                           velX = 0;
+                           accX = 0;
+                           if(velY>0){
+                              frictionAccY = -0.2;
+                           }
+                           if(velY<0){
+                              frictionAccY = 0.2;
+                           }
+                        }else if(peopleCollide(getBottomSide())){
+                           y = opponent.y - opponent.height;
+                           velY = 0;
+                           accY = 0;
+                           canJump = true;
+                           if(movementDirection == "jump"){
+                              movementDirection = "front";
+                           }
+                           if(velX>0){
+                              frictionAccX = -0.2;
+                           }
+                           if(velX<0){
+                              frictionAccX = 0.2;
+                           }
+                        }else if(peopleCollide(getTopSide())){
+                           y = opponent.y + height;
+                           velY = 0;
+                           accY = 0;
+                           if(velX>0){
+                              frictionAccX = -0.2;
+                           }
+                           if(velX<0){
+                              frictionAccX = 0.2;
+                           }
+                        }
+                     }
+                  }
+               }
+            }
 
+            function setWidthAndHeight(){
+               if(movementDirection=="right"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="left"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="jump"){
+                  width = 55;
+                  height = 70;
+              }else{
+                  width = 31;
+                  height = 64;
+              }
+            }
+
+            
+            function getLeftSide(){
+               var side = {};
+               side.x = x-width/2.0+collisionSideThickness/2.0;
+               side.y = y-collisionSideThickness;
+               side.width = collisionSideThickness;
+               side.height = height-collisionSideThickness*2;
+               return side;
+            }
+            function getRightSide(){
+               var side = {};
+               side.x = x+width/2.0-collisionSideThickness/2.0;
+               side.y = y-collisionSideThickness;
+               side.width = collisionSideThickness;
+               side.height = height-collisionSideThickness*2;
+               return side;
+            }
+            function getTopSide(){
+               var side = {};
+               side.x = x;
+               side.y = y-height+collisionSideThickness;
+               side.width = width-collisionSideThickness*2;
+               side.height = collisionSideThickness;
+               return side;
+            }
+            function getBottomSide(){
+               var side = {};
+               side.x = x;
+               side.y = y;
+               side.width = width-collisionSideThickness*2;
+               side.height = collisionSideThickness;
+               return side;
+            }
+
+            function setWidthHeightXAndYOfOpponent(key){
+               if(gamesJson.games[gameID].players[key].movementDirection=="right"){
+                  opponent.width = 66;
+                  opponent.height = 48;
+               }else if(gamesJson.games[gameID].players[key].movementDirection=="left"){
+                  opponent.width = 66;
+                  opponent.height = 48;
+               }else if(gamesJson.games[gameID].players[key].movementDirection=="jump"){
+                  opponent.width = 55;
+                  opponent.height = 70;
+               }else{
+                  opponent.width = 31;
+                  opponent.height = 64;
+               }
+               opponent.x = gamesJson.games[gameID].players[key].x;
+               opponent.y = gamesJson.games[gameID].players[key].y;
+            }
+            function peopleCollide(side){
+               if(side.x+side.width/2.0 > opponent.x-opponent.width/2.0){
+                  if(side.x-side.width/2.0 < opponent.x+opponent.width/2.0){
+                     if(side.y > opponent.y-opponent.height){
+                        if(side.y-side.height < opponent.y){
+                           return true;
+                        }
+                     }
+                  }
+               }
+               return false;
+            }
+         }
+         checkForCollisionsWithOtherPeople();
+         
+         function bumpInto(key){
+
+         }
 
          //////////////check for collisions with death lines/////////////
          function checkForCollisionsWithDeathLines(){
