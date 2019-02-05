@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <style>
     .center {
         display: block;
@@ -59,7 +60,19 @@
         <div class="center" style="font-size: 50px">Rock Paper Scissors</div>
 
         <br>
-        <br> 
+        <br>
+
+        <div id="canvasDiv" class="center"></div>
+
+        <br>
+        <br>
+        
+        <table class="w3-table-all w3-card-4" id="tableDiv">
+            <tr>
+                <th>Player Name</th>
+                <th>Score</th>
+            </tr>
+        </table>
 
     </body>
 
@@ -87,7 +100,8 @@
                 this.canvas.width = canvasWidth;
                 this.canvas.height = canvasHeight;
                 this.context = this.canvas.getContext("2d");
-                document.body.appendChild(this.canvas);
+                //document.body.appendChild(this.canvas);
+                document.getElementById("canvasDiv").appendChild(this.canvas);
                 this.interval = setInterval(updateGameArea, 20);
                 },
             clear : function() {
@@ -258,6 +272,24 @@
             myGameArea.canvas.className = "";
         }
 
+        function updateScores(data){
+            document.getElementById('tableDiv').innerHTML = "";
+            var rowStringHTML = "";
+            rowStringHTML += "<th>"+"Player Name"+"</th>";
+            rowStringHTML += "<th>"+"Score"+"</th>";
+            document.getElementById('tableDiv').innerHTML += "<tr>";
+            document.getElementById('tableDiv').innerHTML += rowStringHTML;
+            document.getElementById('tableDiv').innerHTML += "</tr>";
+            for (var name in data) {
+                rowStringHTML = "";
+                rowStringHTML += "<th>"+name+"</th>";
+                rowStringHTML += "<th>"+data[name]+"</th>";
+                document.getElementById('tableDiv').innerHTML += "<tr>";
+                document.getElementById('tableDiv').innerHTML += rowStringHTML;
+                document.getElementById('tableDiv').innerHTML += "</tr>";
+            }
+        }
+
 
 
 
@@ -299,6 +331,11 @@
         socket.on('welcomeMe', function(data) {
             console.log("welcomeMe");
             console.log(data);
+        });
+        socket.on('playersScores', function(data) {
+            console.log("playersScores");
+            console.log(data);
+            updateScores(data);
         });
         socket.on('playersPositions', function(data) {
             //console.log("playersPositions");

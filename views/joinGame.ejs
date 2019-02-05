@@ -54,12 +54,12 @@ $(document).ready(function(){
           rowStringHTML += "<th>"+game.map+"</th>";
           rowStringHTML += "<th>";
             rowStringHTML += '<form method="post" action="/joinGameClicked">'
-            rowStringHTML += '<div class="center" style="display:none">';
-            rowStringHTML += 'Game ID: <input type="text" name="gameID" id="gameID" value="'+game.gameID+'">'
-            rowStringHTML += '</div>'
-            rowStringHTML += '<button class="center" type="submit">Join</button>';
+              rowStringHTML += '<div class="center" style="display:none">';
+                rowStringHTML += 'Game ID: <input type="text" name="gameID" id="gameID" value="'+game.gameID+'">'
+              rowStringHTML += '</div>'
+              rowStringHTML += '<button class="center" type="submit">Join</button>';
             rowStringHTML += '</form>';
-            rowStringHTML += '</th>';
+          rowStringHTML += '</th>';
 
           document.getElementById('tableDiv').innerHTML += "<tr>";
           document.getElementById('tableDiv').innerHTML += rowStringHTML;

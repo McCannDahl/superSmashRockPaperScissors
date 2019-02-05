@@ -138,6 +138,7 @@ io.on('connection', function(socket) {
    socket.emit('socketNumber',{ socketNumber: socketNumber});
    var mySocketNumber = socketNumber;
    var gameID = null;
+   var gameIndex = null;
    var name = null;
    var password = null;
    var isValid = false;
@@ -157,8 +158,8 @@ io.on('connection', function(socket) {
    var map = {};
    var width = 0;
    var height = 0;
-   var x = 300;
-   var y = 0;
+   var x = 400;
+   var y = 100;
    var movementDirection = "front";
    var actionDirection = "";
    var collisionSideThickness = 8;
@@ -176,6 +177,8 @@ io.on('connection', function(socket) {
    var myActionObject = {x:0,y:0,width:0,height:0};
    var health = 100;
    var gotSuperHit = false;
+   var score = 0;
+   var lastGuyWhoTouhedMe = "";
 
    socketNumber++;
    socket.on('disconnect', function () {
@@ -186,6 +189,7 @@ io.on('connection', function(socket) {
       console.log('validating user');
       if(validateUser(data.gameID,data.name,data.password)){
          gameID = data.gameID;
+         gameIndex = getGameIndexFromGameID(gameID);
          name = data.name;
          password = password;
          socket.join("room-"+gameID);
@@ -195,6 +199,7 @@ io.on('connection', function(socket) {
          map = getMap(mapID);
          socket.emit('validation',{ valid: true,map:map});
          isValid = true;
+         sendScores();
       }else{
          console.log("user is not vlaid");
          socket.emit('validation',{ valid: false});
@@ -720,9 +725,6 @@ io.on('connection', function(socket) {
          }
          checkForCollisionsWithOtherPeople();
          
-         function bumpInto(key){
-
-         }
 
          //////////////check for collisions with death lines/////////////
          function checkForCollisionsWithDeathLines(){
@@ -790,6 +792,8 @@ io.on('connection', function(socket) {
                action = "";
                actionObject = {x:0,y:0,width:0,height:0};
                health = 100;
+               lastGuyWhoTouhedMe = "";
+               updateScore();
             }
          }
          checkForCollisionsWithDeathLines();
@@ -883,12 +887,15 @@ io.on('connection', function(socket) {
                if(gamesJson.games[gameID].players[key].action == "rock" && action == "scissors"){
                   power = .8;
                   damage = .2;
+                  lastGuyWhoTouhedMe = key;
                }else if(gamesJson.games[gameID].players[key].action == "paper" && action == "rock"){
                   power = .5;
                   damage = .5;
+                  lastGuyWhoTouhedMe = key;
                }else if(gamesJson.games[gameID].players[key].action == "scissors" && action == "paper"){
                   power = .2;
                   damage = .8;
+                  lastGuyWhoTouhedMe = key;
                }
 
                if(gamesJson.games[gameID].players[key].actionDirection == "right"){
@@ -1013,6 +1020,7 @@ io.on('connection', function(socket) {
                if(health<1){
                   health = 1;
                }
+               lastGuyWhoTouhedMe = key;
             }
          }
          
@@ -1023,9 +1031,25 @@ io.on('connection', function(socket) {
          gamesJson.games[gameID].players[name].y = y;
          gamesJson.games[gameID].players[name].action = action;
          gamesJson.games[gameID].players[name].health = health;
-   
+
+         
       }
    }, 30);
+
+   function updateScore(){
+      if(gamesJson.games[gameIndex].timeLives == "on"){
+         if(lastGuyWhoTouhedMe != ""){
+            gamesJson.games[gameIndex].scores[lastGuyWhoTouhedMe] += 1;
+         }
+         gamesJson.games[gameIndex].scores[name] -= 1;
+      }else{
+         gamesJson.games[gameIndex].scores[name] -= 1;
+      }
+      sendScores();
+   }
+   function sendScores(){
+      io.sockets.in("room-"+gamesJson.games[gameIndex].gameID).emit('playersScores',gamesJson.games[gameIndex].scores);
+   }
 
 });
 
@@ -1044,6 +1068,7 @@ http.listen(3000, function() {
 function createNewGame(data) {
    data.gameID = gamesJson.games.length;
    data.players = {};
+   data.scores = {};
    gamesJson.games.push(data);
    return gamesJson.games.length-1;
 }
@@ -1105,6 +1130,13 @@ function addPlayerToGame(name,gameID,color){
             health: 100,
             unsetAction: false,
          };
+
+         if(gamesJson.games[gameIndex].timeLives == "on"){
+            gamesJson.games[gameIndex].scores[name] = 0;
+         }else{
+            gamesJson.games[gameIndex].scores[name] = parseInt(gamesJson.games[gameIndex].lives+"");
+         }
+
          return true;
       }
    }
