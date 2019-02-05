@@ -172,7 +172,9 @@ io.on('connection', function(socket) {
    var rightKeyPressed = false;
    var action = "";
    var actionObject = {x:0,y:0,width:0,height:0};
+   var myActionObject = {x:0,y:0,width:0,height:0};
    var health = 100;
+   var gotSuperHit = false;
 
    socketNumber++;
    socket.on('disconnect', function () {
@@ -379,6 +381,7 @@ io.on('connection', function(socket) {
       if(downKeyPressed){
          keysAccY = 3;
       }
+      gamesJson.games[gameID].players[name].unsetAction = false;
    }
 
    //////////////update position function/////////////
@@ -386,6 +389,9 @@ io.on('connection', function(socket) {
       if(isValid && gamesJson.games[gameID]){
 
          //////////////Set Action/////////////
+         if(gamesJson.games[gameID].players[name].unsetAction){
+            unsetAction();
+         }
          if(action != ""){
             keysAccX = 0;
             keysAccY = 0;
@@ -426,16 +432,15 @@ io.on('connection', function(socket) {
             if(velY>-.2 && velY<.2 ){
                velY = 0;
             }
+            if(hitAccX!=0){
+               hitAccX = 0;
+            }
+            if(hitAccY!=0){
+               hitAccY = 0;
+            }
             
          }
          updateVelocity();
-         
-         if(hitAccX!=0){
-            hitAccX = 0;
-         }
-         if(hitAccY!=0){
-            hitAccY = 0;
-         }
 
          //////////////update position/////////////
          x += velX;
@@ -579,10 +584,195 @@ io.on('connection', function(socket) {
 
 
          //////////////check for collisions with death lines/////////////
+         function checkForCollisionsWithDeathLines(){
+            if(isValid == true){
+               setWidthAndHeight();
+               if(map.hasOwnProperty("deathLines")){
+                  if(y-height<map.deathLines.top){
+                     die();
+                  }
+                  if(y>map.deathLines.bottom){
+                     die();
+                  }
+                  if(x-width/2<map.deathLines.left){
+                     die();
+                  }
+                  if(x+width/2>map.deathLines.right){
+                     die();
+                  }
+               }
+            }
+   
+            function setWidthAndHeight(){
+               if(movementDirection=="right"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="left"){
+                  width = 66;
+                  height = 48;
+              }else if(movementDirection=="jump"){
+                  width = 55;
+                  height = 70;
+              }else{
+                  width = 31;
+                  height = 64;
+              }
+            }
+            
+            function die(){
+               x = 500;
+               y = 100;
+               keysAccX = 0;
+               keysAccY = 0;
+               dragAccX = 0;
+               dragAccY = 0;
+               hitAccX = 0;
+               hitAccY = 0;
+               frictionAccX = 0;
+               frictionAccY = 0;
+               gravity = 3;
+               velX = 0;
+               velY = 0;
+               canJump = false;
+               mapID = 0;
+               movementDirection = "front";
+               actionDirection = "";
+               collisionSideThickness = 8;
+               collided = false;
+               rockKeyPressed = false;
+               paperKeyPressed = false;
+               scissorsKeyPressed = false;
+               upKeyPressed = false;
+               downKeyPressed = false;
+               leftKeyPressed = false;
+               rightKeyPressed = false;
+               action = "";
+               actionObject = {x:0,y:0,width:0,height:0};
+               health = 100;
+            }
+         }
+         checkForCollisionsWithDeathLines();
+
+
+
+         //////////////check for collisions of action with other players/////////////
+         function checkForCollisionsBetweenActionAndActions(){
+            if(isValid == true){
+               if(action != ""){
+                  setWidthAndHeightOfMyAction();
+                  if(gamesJson.games[gameID].hasOwnProperty("players")){
+                     gotSuperHit = false;
+                     for (var key in gamesJson.games[gameID].players) {
+                        if(key != name && gamesJson.games[gameID].players[key].action != ""){
+                           setWidthHeightXAndYOfAction(key);
+                           if(bothActionsCollide()){
+                              getSuperHit(key);
+                              gotSuperHit = true;
+                              gamesJson.games[gameID].players[name].unsetAction = true;
+                              gamesJson.games[gameID].players[key].unsetAction = true;
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+
+            function setWidthAndHeightOfMyAction(){
+               if(actionDirection=="right"){
+                  myActionObject.x = 33-5;
+                  myActionObject.y = -24+10;
+               }else if(actionDirection=="left"){
+                  myActionObject.x = -33+5;
+                  myActionObject.y = -24+10;
+               }else if(actionDirection=="up"){
+                  myActionObject.x = 0;
+                  myActionObject.y = -72+20;
+               }else if(actionDirection=="down"){
+                  myActionObject.x = 0;
+                  myActionObject.y = 10;
+               }
+               myActionObject.x += x;
+               myActionObject.y += y;
+               myActionObject.width = 20;
+               myActionObject.height = 20;
+            }
+
+            function setWidthHeightXAndYOfAction(key){
+               if(gamesJson.games[gameID].players[key].actionDirection=="right"){
+                  actionObject.x = 33-5;
+                  actionObject.y = -24+10;
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="left"){
+                  actionObject.x = -33+5;
+                  actionObject.y = -24+10;
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="up"){
+                  actionObject.x = 0;
+                  actionObject.y = -72+20;
+               }else if(gamesJson.games[gameID].players[key].actionDirection=="down"){
+                  actionObject.x = 0;
+                  actionObject.y = 10;
+               }
+               actionObject.x += gamesJson.games[gameID].players[key].x;
+               actionObject.y += gamesJson.games[gameID].players[key].y;
+               actionObject.width = 20;
+               actionObject.height = 20;
+
+            }
+            function bothActionsCollide(){
+               if(myActionObject.x+myActionObject.width/2.0 > actionObject.x-actionObject.width/2.0){
+                  if(myActionObject.x-myActionObject.width/2.0 < actionObject.x+actionObject.width/2.0){
+                     if(myActionObject.y > actionObject.y-actionObject.height){
+                        if(myActionObject.y-myActionObject.height < actionObject.y){
+                           return true;
+                        }
+                     }
+                  }
+               }
+               return false;
+            }
+         }
+         checkForCollisionsBetweenActionAndActions();
+         
+         function getSuperHit(key){
+
+            if(gamesJson.games[gameID].players[key].action != "" && action != ""){
+
+               var power = 0;
+               var damage = 0;
+
+               if(gamesJson.games[gameID].players[key].action == "rock" && action == "scissors"){
+                  power = .8;
+                  damage = .2;
+               }else if(gamesJson.games[gameID].players[key].action == "paper" && action == "rock"){
+                  power = .5;
+                  damage = .5;
+               }else if(gamesJson.games[gameID].players[key].action == "scissors" && action == "paper"){
+                  power = .2;
+                  damage = .8;
+               }
+
+               if(gamesJson.games[gameID].players[key].actionDirection == "right"){
+                  hitAccX = (30*power)*(100/health);
+                  hitAccY = (10*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "left"){
+                  hitAccX = (-30*power)*(100/health);
+                  hitAccY = (10*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "up"){
+                  hitAccY = (-30*power)*(100/health);
+               }else if(gamesJson.games[gameID].players[key].actionDirection == "down"){
+                  hitAccY = (30*power)*(100/health);
+               }
+
+               health -= health*damage;
+               if(health<1){
+                  health = 1;
+               }
+            }
+         }
+
          
          //////////////check for collisions of action with other players/////////////
          function checkForCollisionsWithActions(){
-            if(isValid == true){
+            if(isValid == true && gotSuperHit == false){
                setWidthAndHeight();
                if(gamesJson.games[gameID].hasOwnProperty("players")){
                   for (var key in gamesJson.games[gameID].players) {
@@ -590,6 +780,7 @@ io.on('connection', function(socket) {
                         setWidthHeightXAndYOfAction(key);
                         if(actionsCollide()){
                            getHit(key);
+                           gamesJson.games[gameID].players[key].unsetAction = true;
                         }
                      }
                   }
@@ -655,14 +846,14 @@ io.on('connection', function(socket) {
                var damage = 0;
 
                if(gamesJson.games[gameID].players[key].action == "rock"){
-                  power = .8;
-                  damage = .2;
+                  power = .4;
+                  damage = .1;
                }else if(gamesJson.games[gameID].players[key].action == "paper"){
-                  power = .5;
-                  damage = .5;
+                  power = .25;
+                  damage = .25;
                }else if(gamesJson.games[gameID].players[key].action == "scissors"){
-                  power = .2;
-                  damage = .8;
+                  power = .1;
+                  damage = .4;
                }
 
                if(gamesJson.games[gameID].players[key].actionDirection == "right"){
@@ -683,7 +874,7 @@ io.on('connection', function(socket) {
                }
             }
          }
-
+         
          /////////////update actual variables///////////
          gamesJson.games[gameID].players[name].movementDirection = movementDirection;
          gamesJson.games[gameID].players[name].actionDirection = actionDirection;
@@ -771,6 +962,7 @@ function addPlayerToGame(name,gameID,color){
             action:"",
             actionDirection:"",
             health: 100,
+            unsetAction: false,
          };
          return true;
       }
@@ -811,6 +1003,12 @@ function getMap(mapID){
          width:100,
          height:10
       });
+      map.deathLines = {
+         top: 0,
+         bottom: canvasHeight,
+         left: 0,
+         right: canvasWidth
+      };
       return map;
    //}
 }
