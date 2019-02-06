@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 190px;
+  height: 34px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #222222;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #666666;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(155px);
+  -ms-transform: translateX(155px);
+  transform: translateX(155px);
+}
+
+/*------ ADDED CSS ---------*/
+.on
+{
+  display: none;
+}
+
+.on, .off
+{
+  color: white;
+  position: absolute;
+  transform: translate(-50%,-50%);
+  top: 50%;
+  left: 50%;
+}
+
+input:checked+ .slider .on
+{display: block;}
+
+input:checked + .slider .off
+{display: none;}
+
+/*--------- END --------*/
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;}
+
+
+/* HIDE RADIO */
+[type=radio] { 
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* IMAGE STYLES */
+[type=radio] + img {
+  cursor: pointer;
+}
+
+/* CHECKED STYLES */
+[type=radio]:checked + img {
+  outline: 2px solid #888;
+}
+
+
+</style>
+</head>
+<body>
+
+<br>
+<br>
+
+<div class="center" style="font-size: 50px">Join Game</div>
+
+<br>
+<br>
+
+<form method="post" action="/joinSpecificGame">
+  
+  <div class="center" style="display:none">
+    Game ID: <input type="text" name="gameID" id="gameID">
+  </div>
+  
+  <br>
+
+  <div class="center" id="passwordDiv" style="display:none">
+    Game Password: <input type="password" name="password" id="password" size="10">
+  </div>
+
+  <br>
+
+  <div class="center">
+  	My Name: <input type="text" name="myName" size="10">
+  </div>
+  
+  <br>
+
+
+  <div class="center">
+    Character
+    <div id="maps">
+      
+      <div class="center">
+        <label>
+          <input type="radio" name="color" value="black" checked>
+          <img type="image" src="/images/ninja_front_black.png" alt="Submit" width="93" height="191">
+        </label>
+        
+        <label>
+          <input type="radio" name="color" value="red" >
+          <img type="image" src="/images/ninja_front_red.png" alt="Submit" width="93" height="191">
+        </label>
+        <label>
+          <input type="radio" name="color" value="orange" >
+          <img type="image" src="/images/ninja_front_orange.png" alt="Submit" width="93" height="191">
+        </label>
+        <label>
+          <input type="radio" name="color" value="yellow">
+          <img type="image" src="/images/ninja_front_yellow.png" alt="Submit" width="93" height="191">
+        </label>
+      </div>
+      <div class="center">        
+        <label>
+          <input type="radio" name="color" value="green" >
+          <img type="image" src="/images/ninja_front_green.png" alt="Submit" width="93" height="191">
+        </label>
+        <label>
+          <input type="radio" name="color" value="aqua" >
+          <img type="image" src="/images/ninja_front_aqua.png" alt="Submit" width="93" height="191">
+        </label>  
+        <label>
+          <input type="radio" name="color" value="blue" >
+          <img type="image" src="/images/ninja_front_blue.png" alt="Submit" width="93" height="191">
+        </label>
+        <label>
+          <input type="radio" name="color" value="purple" >
+          <img type="image" src="/images/ninja_front_purple.png" alt="Submit" width="93" height="191">
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <br>
+  
+  <button class="center" type="submit">Join Game</button>
+
+</form>
+
+</body>
+
+<script>
+  var gameID = "<%= gameID %>";
+  console.log("gameID = "+gameID);
+  var isTherePassword = "<%= isTherePassword %>";
+  console.log("isTherePassword = "+isTherePassword);
+  var password = "<%= password %>";
+  console.log("password = "+password);
+  if(gameID!="-1") {
+    document.getElementById("gameID").value = gameID;
+  }
+  if(isTherePassword == "true") {
+    console.log("showing password box");
+    document.getElementById("passwordDiv").style.display = "block";
+  }
+  if(password!="") {
+    document.getElementById("password").value = password;
+  }
+</script>
+
+</html>

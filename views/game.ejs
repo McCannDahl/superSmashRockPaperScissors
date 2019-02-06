@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <style>
+    .center {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+    canvas {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border:1px solid #d3d3d3;
+        background-color: #f1f1f1;
+        text-align: center;
+    }
+    .apply-shake1 {
+        animation: shake 0.1s;
+        animation-iteration-count: infinite;
+    }
+    .apply-shake2 {
+        animation: shake 0.1s;
+        animation-iteration-count: infinite;
+    }
+    .apply-shake3 {
+        animation: shake 0.1s;
+        animation-iteration-count: infinite;
+    }
+    .apply-shake4 {
+        animation: shake 0.1s;
+        animation-iteration-count: infinite;
+    }
+    .apply-shake5 {
+        animation: shake 0.3s;
+        animation-iteration-count: infinite;
+    }
+    @keyframes shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -1px) rotate(-1deg); }
+        20% { transform: translate(-1px, 0px) rotate(1deg); }
+        30% { transform: translate(1px, 1px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 1px) rotate(-1deg); }
+        60% { transform: translate(-1px, 1px) rotate(0deg); }
+        70% { transform: translate(1px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 1px) rotate(0deg); }
+        100% { transform: translate(1px, -1px) rotate(-1deg); }
+    }
+    </style>
+    </head>
+    <body>
+        
+        <div class="center" style="font-size: 100px">Super Smash</div>
+        <br>
+        <div class="center" style="font-size: 50px">Rock Paper Scissors</div>
+
+        <br>
+        <br>
+
+        <div id="canvasDiv" class="center"></div>
+
+        <br>
+        <br>
+        
+        <table class="w3-table-all w3-card-4" id="tableDiv">
+            <tr>
+                <th>Player Name</th>
+                <th>Score</th>
+            </tr>
+        </table>
+
+    </body>
+
+    <script src = "/socket.io/socket.io.js"></script>
+    <script>
+        /////////////variables//////////////
+        var players = {};
+        var map = {};
+        var images = [];
+        var actionImages = [];
+        var width = 0;
+        var height = 0;
+        var actionX = 0;
+        var actionY = 0;
+        var canvasWidth = 800;
+        var canvasHeight = 400;
+
+
+
+        
+        ////////////////canvas////////////
+        var myGameArea = {
+            canvas : document.createElement("canvas"),
+            start : function() {
+                this.canvas.width = canvasWidth;
+                this.canvas.height = canvasHeight;
+                this.context = this.canvas.getContext("2d");
+                //document.body.appendChild(this.canvas);
+                document.getElementById("canvasDiv").appendChild(this.canvas);
+                this.interval = setInterval(updateGameArea, 20);
+                },
+            clear : function() {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        }
+        function startGame() {
+            myGameArea.start();
+        }
+        function updateGameArea() {
+            myGameArea.clear();
+            drawPlayers();
+            drawActions();
+            drawMap();
+        }
+        function drawPlayers(){
+            for (var key in players) {
+                if (players.hasOwnProperty(key)) {
+                    images[key] = new Image();
+                    images[key].src = '/images/ninja_'+players[key].movementDirection+'_'+players[key].color+".PNG";
+                    if(players[key].movementDirection=="right"){
+                        width = 66;
+                        height = 48;
+                    }else if(players[key].movementDirection=="left"){
+                        width = 66;
+                        height = 48;
+                    }else if(players[key].movementDirection=="jump"){
+                        width = 55;
+                        height = 70;
+                    }else{
+                        width = 31;
+                        height = 64;
+                    }
+                    myGameArea.context.drawImage(images[key], players[key].x-width/2.0, players[key].y-height, width, height);
+                    myGameArea.context.fillStyle = "green";
+                    myGameArea.context.fillRect(players[key].x-15, players[key].y-64-10, (players[key].health/100.0)*30, 5);
+                }
+            }
+        }
+        function drawActions(){
+            for (var key in players) {
+                if (players.hasOwnProperty(key)) {
+                    if(players[key].action != ""){
+                        actionImages[key] = new Image();
+                        actionImages[key].src = '/images/'+players[key].action+'1.PNG';
+                        if(players[key].actionDirection=="right"){
+                            actionX = 33-5;
+                            actionY = -24+10;
+                        }else if(players[key].actionDirection=="left"){
+                            actionX = -33+5;
+                            actionY = -24+10;
+                        }else if(players[key].actionDirection=="up"){
+                            actionX = 0;
+                            actionY = -72+20;
+                        }else if(players[key].actionDirection=="down"){
+                            actionX = 0;
+                            actionY = 10;
+                            console.log(players[key].actionDirection);
+                        }
+                        myGameArea.context.drawImage(actionImages[key], players[key].x+actionX-10, players[key].y+actionY-20, 20, 20);
+                
+                    }
+                }
+            }
+        }
+        function drawMap(){
+            if(map.hasOwnProperty("blocks")){
+                for (var key in map.blocks) {
+                    if (map.blocks.hasOwnProperty(key)) {
+                        myGameArea.context.fillStyle = "black";
+                        myGameArea.context.fillRect(map.blocks[key].x-map.blocks[key].width/2.0,map.blocks[key].y-map.blocks[key].height, map.blocks[key].width, map.blocks[key].height);
+                    }
+                }
+            }
+        }
+        startGame();
+
+
+
+
+
+
+
+
+
+        ////////////////keyboard////////////
+        window.addEventListener("keydown", keysPressed, false);
+        window.addEventListener("keyup", keysReleased, false);
+        function keysPressed(e) {
+            // left
+            if (e.keyCode == 37) {
+                socket.emit('leftKeyPressed');
+            }
+            // right
+            if (e.keyCode == 39) {
+                socket.emit('rightKeyPressed');
+            }
+            // up
+            if (e.keyCode == 38) {
+                socket.emit('upKeyPressed');
+            }
+            // down
+            if (e.keyCode == 40) {
+                socket.emit('downKeyPressed');
+            }
+
+            // a
+            if (e.keyCode == 65) {
+                socket.emit('rockKeyPressed');
+            }
+            // s
+            if (e.keyCode == 83) {
+                socket.emit('paperKeyPressed');
+            }
+            // d
+            if (e.keyCode == 68) {
+                socket.emit('scissorsKeyPressed');
+            }
+        
+            e.preventDefault();
+        }
+        
+        function keysReleased(e) {
+            // left
+            if (e.keyCode == 37) {
+                socket.emit('leftKeyReleased');
+            }
+            // right
+            if (e.keyCode == 39) {
+                socket.emit('rightKeyReleased');
+            }
+            // up
+            if (e.keyCode == 38) {
+                socket.emit('upKeyReleased');
+            }
+            // down
+            if (e.keyCode == 40) {
+                socket.emit('downKeyReleased');
+            }
+
+            // a
+            if (e.keyCode == 65) {
+                socket.emit('rockKeyReleased');
+            }
+            // s
+            if (e.keyCode == 83) {
+                socket.emit('paperKeyReleased');
+            }
+            // d
+            if (e.keyCode == 68) {
+                socket.emit('scissorsKeyReleased');
+            }
+        
+            e.preventDefault();
+        }
+
+        function shake(n){
+            myGameArea.canvas.className = "apply-shake"+n;
+            //myGameArea.canvas.classList.add("apply-shake"+n);
+            if(n==5){
+                setTimeout(unshake, 500);
+            }else{
+                setTimeout(unshake, 100);
+            }
+        }
+
+        function unshake(){
+            myGameArea.canvas.className = "";
+        }
+
+        function updateScores(data){
+            document.getElementById('tableDiv').innerHTML = "";
+            var rowStringHTML = "";
+            rowStringHTML += "<th>"+"Player Name"+"</th>";
+            rowStringHTML += "<th>"+"Score"+"</th>";
+            document.getElementById('tableDiv').innerHTML += "<tr>";
+            document.getElementById('tableDiv').innerHTML += rowStringHTML;
+            document.getElementById('tableDiv').innerHTML += "</tr>";
+            for (var name in data) {
+                rowStringHTML = "";
+                rowStringHTML += "<th>"+name+"</th>";
+                rowStringHTML += "<th>"+data[name]+"</th>";
+                document.getElementById('tableDiv').innerHTML += "<tr>";
+                document.getElementById('tableDiv').innerHTML += rowStringHTML;
+                document.getElementById('tableDiv').innerHTML += "</tr>";
+            }
+        }
+
+
+
+
+
+
+
+
+        ////////////////variables////////////
+        var gameID = "<%= gameID %>";
+        console.log("gameID = "+gameID);
+        var name = "<%= name %>";
+        console.log("name = "+name);
+        var password = "<%= password %>";
+        console.log("password = "+password);
+        
+
+
+
+
+
+
+
+
+
+        ///////////////socket///////////////////
+        var socket = io();
+        var socketNumber = -1;
+        socket.on('socketNumber', function(data) {
+            console.log("socketNumber");
+            console.log(data);
+            socketNumber = data.socketNumber;
+            socket.emit('validate', {gameID:gameID,name:name,password:password});
+        });
+        socket.on('validation', function(data) {
+            console.log("validation");
+            console.log(data);
+            map = data.map;
+        });
+        socket.on('welcomeMe', function(data) {
+            console.log("welcomeMe");
+            console.log(data);
+        });
+        socket.on('playersScores', function(data) {
+            console.log("playersScores");
+            console.log(data);
+            updateScores(data);
+        });
+        socket.on('playersPositions', function(data) {
+            //console.log("playersPositions");
+            //console.log(data);
+            players = data.players;
+        });
+
+
+
+    </script>
+
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 190px;
+  height: 34px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #222222;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #666666;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(155px);
+  -ms-transform: translateX(155px);
+  transform: translateX(155px);
+}
+
+/*------ ADDED CSS ---------*/
+.on
+{
+  display: none;
+}
+
+.on, .off
+{
+  color: white;
+  position: absolute;
+  transform: translate(-50%,-50%);
+  top: 50%;
+  left: 50%;
+}
+
+input:checked+ .slider .on
+{display: block;}
+
+input:checked + .slider .off
+{display: none;}
+
+/*--------- END --------*/
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;}
+
+
+/* HIDE RADIO */
+[type=radio] { 
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* IMAGE STYLES */
+[type=radio] + img {
+  cursor: pointer;
+}
+
+/* CHECKED STYLES */
+[type=radio]:checked + img {
+  outline: 2px solid #888;
+}
+
+
+</style>
+</head>
+<body>
+
+<br>
+<br>
+
+<div class="center" style="font-size: 50px">New Game</div>
+
+<br>
+<br>
+
+<form method="post" action="/createNewGame">
+  
+  <div class="center">
+  	Name of Game: <input type="text" name="nameOfGame" size="10">
+  </div>
+  
+  <br>
+  
+  <div class="center">
+  	Number of players: <input type="number" name="maxNumberOfPlayers" min="2" max="8" value="2">
+  </div>
+  
+  <br>
+  
+  <div class="center">
+  <label class="switch"><input type="checkbox" id="togBtn" onclick="timeLivesBob()" name="timeLives"><div class="slider round"><span class="on">Time</span><span class="off">Lifes</span></div></label>
+  </div>
+  
+  <br>
+  
+  <div id="timediv" class="center" style="display:none">
+  	Time: <input type="number" name="time" min="1" max="5" value="3"> mins
+  </div>
+  
+  <br>
+  
+  <div id="livesdiv" class="center">
+  	Lives: <input type="number" name="lives" min="1" max="5" value="3">
+  </div>
+  
+  <br>
+  
+  <div class="center">
+  <label class="switch"><input type="checkbox" id="togBtn2" onclick="privatePublicBob(this.checked)" name="privatePublic" checked><div class="slider round"><span class="on">Public</span><span class="off">Private</span></div></label>
+  </div>
+  
+  <br>
+  
+  <div id="passworddiv" class="center"  style="display:none">
+  	Password: <input type="password" name="password" size="10">
+  </div>
+  
+  <br>
+  
+  <div class="center">
+  Map
+  <div id="maps">
+    
+    <label class="center">
+      <input type="radio" name="map" value="1" checked>
+      <img class="center" type="image" src="/images/rock.png" alt="Submit" width="150" height="80">
+    </label>
+    
+    <label class="center">
+      <input type="radio" name="map" value="2" >
+      <img class="center" type="image" src="/images/rock.png" alt="Submit" width="150" height="80">
+    </label>
+  
+  </div>
+  </div>
+  
+  <br>
+  
+
+  <button class="center" type="submit">Start New Game</button>
+
+</form>
+
+</body>
+
+<script>
+
+  function timeLivesBob() {
+    if(!document.getElementById("togBtn").checked){
+      document.getElementById("timediv").style.display = "none";
+      document.getElementById("livesdiv").style.display = "block";
+    }else{
+      document.getElementById("timediv").style.display = "block";
+      document.getElementById("livesdiv").style.display = "none";
+    }
+  }
+  function privatePublicBob(boole) {
+    if(boole){
+      document.getElementById("passworddiv").style.display = "none";
+    }else{
+      document.getElementById("passworddiv").style.display = "block";
+    }
+  }
+
+</script>
+
+</html>
