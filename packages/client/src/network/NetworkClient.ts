@@ -1,5 +1,6 @@
 import {
   AttackType,
+  BotDifficulty,
   ClientMessage,
   CombatEvent,
   MatchPhase,
@@ -93,10 +94,33 @@ export class NetworkClient {
     return this.localPlayerId;
   }
 
-  public joinRoom(name: string, color?: string, roomCode?: string, isPrivate?: boolean): void {
+  public joinRoom(
+    name: string,
+    color?: string,
+    roomCode?: string,
+    isPrivate?: boolean,
+    isSolo?: boolean,
+    botDifficulty?: BotDifficulty
+  ): void {
     const msg: ClientMessage = {
       type: 'join_room',
-      payload: { name, color, roomCode, isPrivate },
+      payload: { name, color, roomCode, isPrivate, isSolo, botDifficulty },
+    };
+    this.send(msg);
+  }
+
+  public addBot(difficulty: BotDifficulty = 'medium'): void {
+    const msg: ClientMessage = {
+      type: 'add_bot',
+      payload: { difficulty },
+    };
+    this.send(msg);
+  }
+
+  public removeBot(botId: string): void {
+    const msg: ClientMessage = {
+      type: 'remove_bot',
+      payload: { botId },
     };
     this.send(msg);
   }

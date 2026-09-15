@@ -1,5 +1,6 @@
 import {
   AttackType,
+  BotDifficulty,
   CombatEvent,
   DEFAULT_ARENA,
   MatchPhase,
@@ -27,9 +28,13 @@ const lobbyCodeDisplay = document.getElementById('lobby-code-display')!;
 const lobbyRoster = document.getElementById('lobby-roster')!;
 const roomCodeTag = document.getElementById('room-code-tag')!;
 
+const btnSoloPlay = document.getElementById('btn-solo-play')!;
+const botDifficultySelect = document.getElementById('bot-difficulty-select') as HTMLSelectElement;
 const btnQuickPlay = document.getElementById('btn-quick-play')!;
 const btnCreatePrivate = document.getElementById('btn-create-private')!;
 const btnJoinCode = document.getElementById('btn-join-code')!;
+const btnAddBot = document.getElementById('btn-add-bot')!;
+const lobbyBotDiff = document.getElementById('lobby-bot-diff') as HTMLSelectElement;
 const btnHowToPlay = document.getElementById('btn-how-to-play')!;
 const btnCloseTutorial = document.getElementById('btn-close-tutorial')!;
 const btnCopyLink = document.getElementById('btn-copy-link')!;
@@ -214,17 +219,43 @@ function updateRosterUI(players: Record<string, PlayerState>): void {
     dot.style.background = p.color;
 
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = p.name + (p.isHost ? ' (Host)' : '');
+    const roleTag = p.isBot
+      ? ` [BOT: ${(p.botDifficulty || 'MED').toUpperCase()}]`
+      : p.isHost
+      ? ' (Host)'
+      : '';
+    nameSpan.textContent = p.name + roleTag;
 
     left.appendChild(dot);
     left.appendChild(nameSpan);
 
+    const right = document.createElement('div');
+    right.style.display = 'flex';
+    right.style.alignItems = 'center';
+    right.style.gap = '6px';
+
     const badge = document.createElement('div');
     badge.className = `ready-badge ${p.ready ? 'is-ready' : 'not-ready'}`;
     badge.textContent = p.ready ? 'READY' : 'WAITING';
+    right.appendChild(badge);
+
+    if (p.isBot) {
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove Bot';
+      removeBtn.style.background = 'transparent';
+      removeBtn.style.border = 'none';
+      removeBtn.style.color = '#ff0055';
+      removeBtn.style.cursor = 'pointer';
+      removeBtn.style.fontWeight = 'bold';
+      removeBtn.style.fontSize = '14px';
+      removeBtn.style.padding = '2px 6px';
+      removeBtn.onclick = () => network.removeBot(p.id);
+      right.appendChild(removeBtn);
+    }
 
     item.appendChild(left);
-    item.appendChild(badge);
+    item.appendChild(right);
     lobbyRoster.appendChild(item);
   }
 }
@@ -256,15 +287,30 @@ function showMatchOverUI(winnerId: string | null, players: Record<string, Player
 }
 
 // User Actions
-async function joinMatch(isPrivate: boolean = false, code?: string) {
+async function joinMatch(
+  isPrivate: boolean = false,
+  code?: string,
+  isSolo: boolean = false,
+  botDifficulty?: BotDifficulty
+) {
   const name = playerNameInput.value.trim() || 'Fighter';
   try {
     await network.connect();
-    network.joinRoom(name, selectedColor, code, isPrivate);
+    network.joinRoom(name, selectedColor, code, isPrivate, isSolo, botDifficulty);
   } catch (e) {
     alert('Unable to connect to game server. Ensure server is running.');
   }
 }
+
+btnSoloPlay.addEventListener('click', () => {
+  const diff = botDifficultySelect.value as BotDifficulty;
+  joinMatch(true, undefined, true, diff);
+});
+
+btnAddBot.addEventListener('click', () => {
+  const diff = lobbyBotDiff.value as BotDifficulty;
+  network.addBot(diff);
+});
 
 btnQuickPlay.addEventListener('click', () => joinMatch(false));
 btnCreatePrivate.addEventListener('click', () => joinMatch(true));

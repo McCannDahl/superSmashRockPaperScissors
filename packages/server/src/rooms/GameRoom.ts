@@ -3,6 +3,7 @@ import {
   ArenaConfig,
   AttackType,
   AttackState,
+  BotDifficulty,
   ClashCombatEvent,
   CombatEvent,
   DEFAULT_ARENA,
@@ -22,14 +23,16 @@ import {
 } from '@rps-boom/shared';
 import { RateLimiter } from '../security/RateLimiter.js';
 import { analytics } from '../analytics/AnalyticsService.js';
+import { BotPlayer } from '../ai/BotPlayer.js';
 
 export interface ConnectedPlayer {
   id: string;
-  ws: WebSocket;
+  ws: WebSocket | null;
   state: PlayerState;
   rateLimiter: RateLimiter;
   pendingInput: PlayerInput | null;
   rematchRequested: boolean;
+  bot?: BotPlayer;
 }
 
 export class GameRoom {
@@ -118,6 +121,92 @@ export class GameRoom {
     return playerState;
   }
 
+  public hasHumanPlayers(): boolean {
+    return Array.from(this.players.values()).some((p) => !p.bot);
+  }
+
+  public addBot(difficulty: BotDifficulty = 'medium'): PlayerState | null {
+    if (this.players.size >= 4) return null;
+
+    const botId = `bot_${Math.random().toString(36).substring(2, 8)}`;
+    const botNames = {
+      easy: ['Trainee_Rock', 'Scissor_Pupil', 'Paper_Novice', 'Rookie_Boom'],
+      medium: ['Robo_Striker', 'Cyber_Clasher', 'Blade_Runner', 'Titan_Bot'],
+      hard: ['Master_Matrix', 'Apex_Predator', 'Neural_Nemesis', 'Grandmaster_AI'],
+    };
+    const pool = botNames[difficulty] || botNames.medium;
+    const name = `🤖 ${pool[Math.floor(Math.random() * pool.length)]}`;
+
+    const botColors = ['#ff0055', '#9933ff', '#ff6600', '#39ff14', '#00f0ff', '#ffcc00'];
+    const color = botColors[this.players.size % botColors.length];
+
+    const spawnIdx = this.players.size % this.arena.spawnPoints.length;
+    const spawn = this.arena.spawnPoints[spawnIdx];
+
+    const playerState: PlayerState = {
+      id: botId,
+      name,
+      color,
+      x: spawn.x,
+      y: spawn.y,
+      vx: 0,
+      vy: 0,
+      facing: spawn.x < this.arena.width / 2 ? 1 : -1,
+      isGrounded: true,
+      damagePercent: 0,
+      lives: GAME_CONSTANTS.INITIAL_LIVES,
+      isEliminated: false,
+      isInvulnerable: false,
+      invulnerabilityTimer: 0,
+      attackState: null,
+      hitstunTimer: 0,
+      ready: true,
+      isHost: false,
+      isBot: true,
+      botDifficulty: difficulty,
+      stats: {
+        damageDealt: 0,
+        kos: 0,
+        clashesWon: 0,
+        clashesLost: 0,
+        clashesTied: 0,
+      },
+    };
+
+    const botPlayer = new BotPlayer(botId, name, color, difficulty);
+
+    const connectedPlayer: ConnectedPlayer = {
+      id: botId,
+      ws: null,
+      state: playerState,
+      rateLimiter: new RateLimiter(100, 100),
+      pendingInput: null,
+      rematchRequested: true,
+      bot: botPlayer,
+    };
+
+    this.players.set(botId, connectedPlayer);
+    analytics.trackEvent('bot_added', { roomId: this.id, botId, difficulty });
+
+    // In lobby, check if all players are ready
+    if (this.phase === 'lobby' && this.players.size >= 2) {
+      const allReady = Array.from(this.players.values()).every((p) => p.state.ready);
+      if (allReady) {
+        this.startCountdown();
+      }
+    }
+
+    return playerState;
+  }
+
+  public removeBot(botId: string): void {
+    const p = this.players.get(botId);
+    if (p && p.bot) {
+      this.players.delete(botId);
+      analytics.trackEvent('bot_removed', { roomId: this.id, botId });
+    }
+  }
+
   public removePlayer(id: string): void {
     const player = this.players.get(id);
     if (!player) return;
@@ -171,9 +260,10 @@ export class GameRoom {
 
     player.rematchRequested = true;
 
-    // Check if all remaining connected players want a rematch
-    const allRematch = Array.from(this.players.values()).every((p) => p.rematchRequested);
-    if (allRematch && this.players.size >= 2) {
+    // Check if all human players want a rematch (bots are always ready)
+    const humans = Array.from(this.players.values()).filter((p) => !p.bot);
+    const allHumansRematch = humans.length > 0 && humans.every((p) => p.rematchRequested);
+    if (allHumansRematch && this.players.size >= 2) {
       this.startCountdown();
     }
   }
@@ -250,6 +340,14 @@ export class GameRoom {
   }
 
   private simulatePhysicsAndCombat(dt: number): void {
+    // Generate AI decisions for active bot players
+    const currentRoomState = this.getRoomState();
+    for (const p of this.players.values()) {
+      if (p.bot && !p.state.isEliminated) {
+        p.pendingInput = p.bot.update(dt, p.state, currentRoomState.players, this.arena);
+      }
+    }
+
     const substeps = GAME_CONSTANTS.PHYSICS_SUBSTEPS;
     const subDt = dt / substeps;
 
@@ -610,7 +708,7 @@ export class GameRoom {
 
     const serialized = JSON.stringify(payload);
     for (const p of this.players.values()) {
-      if (p.ws.readyState === WebSocket.OPEN) {
+      if (p.ws && p.ws.readyState === WebSocket.OPEN) {
         p.ws.send(serialized);
       }
     }

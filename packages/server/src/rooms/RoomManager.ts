@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { GameRoom } from './GameRoom.js';
-import { ClientMessage, ServerMessage } from '@rps-boom/shared';
+import { ClientMessage, JoinRoomPayload, ServerMessage } from '@rps-boom/shared';
 import { sanitizePlayerName } from '../security/RateLimiter.js';
 
 export class RoomManager {
@@ -51,7 +51,7 @@ export class RoomManager {
     const room = this.rooms.get(session.roomId);
     if (room) {
       room.removePlayer(session.playerId);
-      if (room.isEmpty()) {
+      if (!room.hasHumanPlayers()) {
         this.deleteRoom(room);
       }
     }
@@ -85,17 +85,44 @@ export class RoomManager {
       case 'request_rematch':
         room.handleRematchRequest(session.playerId);
         break;
+      case 'add_bot':
+        room.addBot(message.payload.difficulty);
+        break;
+      case 'remove_bot':
+        room.removeBot(message.payload.botId);
+        break;
       default:
         break;
     }
   }
 
-  private handleJoinRoom(ws: WebSocket, payload: { name: string; color?: string; roomCode?: string; isPrivate?: boolean }): void {
+  private handleJoinRoom(ws: WebSocket, payload: JoinRoomPayload): void {
     const playerName = sanitizePlayerName(payload.name);
     const playerColor = payload.color || this.getRandomColor();
     const playerId = `usr_${Math.random().toString(36).substring(2, 9)}`;
 
     let targetRoom: GameRoom | null = null;
+
+    if (payload.isSolo) {
+      targetRoom = this.createRoom(true);
+      this.socketToPlayer.set(ws, { roomId: targetRoom.id, playerId });
+      targetRoom.addPlayer(playerId, playerName, playerColor, ws);
+      // Automatically add requested computer opponent
+      const difficulty = payload.botDifficulty || 'medium';
+      targetRoom.addBot(difficulty);
+      // Auto-ready human player to immediately trigger countdown
+      targetRoom.setPlayerReady(playerId, true);
+
+      const welcome: ServerMessage = {
+        type: 'room_joined',
+        payload: {
+          playerId,
+          roomState: targetRoom.getRoomState(),
+        },
+      };
+      ws.send(JSON.stringify(welcome));
+      return;
+    }
 
     if (payload.roomCode) {
       const upperCode = payload.roomCode.toUpperCase().trim();
@@ -174,7 +201,7 @@ export class RoomManager {
   private cleanupEmptyRooms(): void {
     const now = Date.now();
     for (const room of this.rooms.values()) {
-      if (room.isEmpty() && now - room.createdAt > 30000) {
+      if (!room.hasHumanPlayers() && now - room.createdAt > 15000) {
         this.deleteRoom(room);
       }
     }

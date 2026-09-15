@@ -76,6 +76,8 @@ export interface PlayerState {
   hitstunTimer: number;
   ready: boolean;
   isHost: boolean;
+  isBot?: boolean;
+  botDifficulty?: BotDifficulty;
   stats: {
     damageDealt: number;
     kos: number;
@@ -175,18 +177,24 @@ export type CombatEvent =
   | RespawnCombatEvent
   | MatchEndCombatEvent;
 
+export type BotDifficulty = 'easy' | 'medium' | 'hard';
+
 // WebSocket Protocol Messages
 export type ClientMessageType =
   | 'join_room'
   | 'set_ready'
   | 'player_input'
-  | 'request_rematch';
+  | 'request_rematch'
+  | 'add_bot'
+  | 'remove_bot';
 
 export interface JoinRoomPayload {
   name: string;
   color?: string;
   roomCode?: string;
   isPrivate?: boolean;
+  isSolo?: boolean;
+  botDifficulty?: BotDifficulty;
 }
 
 export interface SetReadyPayload {
@@ -197,11 +205,21 @@ export interface PlayerInputPayload extends PlayerInput {}
 
 export interface RequestRematchPayload {}
 
+export interface AddBotPayload {
+  difficulty: BotDifficulty;
+}
+
+export interface RemoveBotPayload {
+  botId: string;
+}
+
 export type ClientMessage =
   | { type: 'join_room'; payload: JoinRoomPayload }
   | { type: 'set_ready'; payload: SetReadyPayload }
   | { type: 'player_input'; payload: PlayerInputPayload }
-  | { type: 'request_rematch'; payload?: RequestRematchPayload };
+  | { type: 'request_rematch'; payload?: RequestRematchPayload }
+  | { type: 'add_bot'; payload: AddBotPayload }
+  | { type: 'remove_bot'; payload: RemoveBotPayload };
 
 export type ServerMessageType =
   | 'room_joined'

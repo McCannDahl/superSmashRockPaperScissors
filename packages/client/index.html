@@ -423,7 +423,20 @@
             </div>
           </div>
 
-          <button id="btn-quick-play" class="btn btn-primary">⚡ Quick Play (Public Match)</button>
+          <!-- Solo Play vs AI -->
+          <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 13px; font-weight: bold; color: var(--accent-cyan);">🤖 Play Solo vs AI</span>
+              <select id="bot-difficulty-select" style="background: #0d121c; border: 1px solid var(--border-color); color: #fff; border-radius: 4px; padding: 4px 8px; font-size: 12px;">
+                <option value="easy">Easy (Trainee)</option>
+                <option value="medium" selected>Medium (Challenger)</option>
+                <option value="hard">Hard (Master)</option>
+              </select>
+            </div>
+            <button id="btn-solo-play" class="btn btn-primary" style="margin-bottom: 0;">🎮 Start Solo Match</button>
+          </div>
+
+          <button id="btn-quick-play" class="btn btn-secondary">⚡ Quick Play (Public Match)</button>
           <button id="btn-create-private" class="btn btn-secondary">🔒 Create Private Room</button>
 
           <div class="form-group" style="margin-top: 14px;">
@@ -449,8 +462,20 @@
           <button id="btn-copy-link" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px; margin-bottom: 16px;">📋 Copy Invite Link</button>
 
           <div class="form-group">
-            <label>Connected Fighters (2-4 Players)</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin-bottom: 0;">Fighters (2-4 Players)</label>
+            </div>
             <div class="roster-list" id="lobby-roster"></div>
+          </div>
+
+          <!-- Add Bot in Lobby -->
+          <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+            <select id="lobby-bot-diff" style="flex: 1; background: #0d121c; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; padding: 8px 10px; font-size: 13px;">
+              <option value="easy">Bot: Easy (Trainee)</option>
+              <option value="medium" selected>Bot: Medium (Challenger)</option>
+              <option value="hard">Bot: Hard (Master)</option>
+            </select>
+            <button id="btn-add-bot" class="btn btn-secondary" style="width: auto; margin-bottom: 0; padding: 8px 14px; font-size: 12px;">+ Add Bot</button>
           </div>
 
           <button id="btn-ready-toggle" class="btn btn-primary">Ready Up</button>
