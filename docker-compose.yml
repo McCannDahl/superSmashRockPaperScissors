@@ -1,0 +1,23 @@
+services:
+  rps-boom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rps-boom-game
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - TICK_RATE=30
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.rpsboom.description=Rock Paper Scissors Boom Game Server"
