@@ -1,4 +1,1 @@
-# superSmashRockPaperScissors
-
-How to run:
-$ ./app.js
+# Rock Paper Scissors Boom
