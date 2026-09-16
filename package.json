@@ -1,0 +1,23 @@
+{
+  "name": "rock-paper-scissors-boom",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based multiplayer fighting game with Rock Paper Scissors clash mechanics and Smash-style knockback",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@rps-boom/shared && npm run build --workspace=@rps-boom/client && npm run build --workspace=@rps-boom/server",
+    "test": "vitest run",
+    "dev:server": "npm run dev --workspace=@rps-boom/server",
+    "dev:client": "npm run dev --workspace=@rps-boom/client",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "start": "npm run start --workspace=@rps-boom/server",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}

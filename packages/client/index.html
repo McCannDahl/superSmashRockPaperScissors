@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rock Paper Scissors Boom — Multiplayer Fighting Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💥</text></svg>">
+    <style>
+      :root {
+        --bg-color: #0a0d14;
+        --card-bg: #121824;
+        --border-color: #26344d;
+        --accent-cyan: #00f0ff;
+        --accent-pink: #ff0055;
+        --accent-gold: #ffcc00;
+        --text-main: #f0f4f8;
+        --text-muted: #8899aa;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #game-container {
+        position: relative;
+        width: 100%;
+        max-width: 1200px;
+        height: 100%;
+        max-height: 800px;
+        aspect-ratio: 12 / 8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #06080d;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.08);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+
+      /* UI Overlay Layer */
+      .ui-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(10, 13, 20, 0.88);
+        backdrop-filter: blur(8px);
+        transition: opacity 0.2s ease;
+        z-index: 20;
+      }
+
+      .ui-overlay.hidden {
+        display: none !important;
+      }
+
+      .ui-card {
+        pointer-events: auto;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 28px 36px;
+        max-width: 480px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+      }
+
+      h1.brand-title {
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, #00f0ff, #ffffff 40%, #ff0055);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 6px;
+      }
+
+      p.tagline {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.4;
+        margin-bottom: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        background: #0a0e17;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: #ffffff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus {
+        border-color: var(--accent-cyan);
+      }
+
+      .color-picker {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+
+      .color-option {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.15s, border-color 0.15s;
+      }
+
+      .color-option:hover {
+        transform: scale(1.15);
+      }
+
+      .color-option.selected {
+        border-color: #ffffff;
+        transform: scale(1.15);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px 18px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        margin-bottom: 10px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent-cyan), #0099ff);
+        color: #050b14;
+      }
+
+      .btn-primary:hover {
+        filter: brightness(1.15);
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: #1c2638;
+        color: #e2e8f0;
+        border: 1px solid var(--border-color);
+      }
+
+      .btn-secondary:hover {
+        background: #25334c;
+      }
+
+      .btn-danger {
+        background: #ff0055;
+        color: #ffffff;
+      }
+
+      .join-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .join-group input {
+        flex: 1;
+        text-transform: uppercase;
+      }
+
+      .join-group button {
+        width: auto;
+        padding: 10px 18px;
+        margin-bottom: 0;
+      }
+
+      /* In-Game HUD overlay */
+      #hud-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 16px;
+      }
+
+      .hud-bottom-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        background: rgba(10, 13, 20, 0.7);
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .controls-guide {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 16px;
+      }
+
+      .key-pill {
+        background: #1f293d;
+        border: 1px solid #3b4d6e;
+        color: #00f0ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-family: monospace;
+      }
+
+      /* Roster List in Lobby */
+      .roster-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 16px 0;
+        max-height: 180px;
+        overflow-y: auto;
+      }
+
+      .roster-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #0d121c;
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+      }
+
+      .roster-player-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .roster-color-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+      }
+
+      .ready-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+
+      .ready-badge.is-ready {
+        background: rgba(57, 255, 20, 0.15);
+        color: #39ff14;
+        border: 1px solid #39ff14;
+      }
+
+      .ready-badge.not-ready {
+        background: rgba(255, 255, 255, 0.06);
+        color: #8899aa;
+      }
+
+      .code-display {
+        font-size: 24px;
+        font-family: monospace;
+        font-weight: 900;
+        letter-spacing: 4px;
+        color: var(--accent-gold);
+        margin: 8px 0;
+      }
+
+      /* Modal styles for Tutorial */
+      .modal-card {
+        max-width: 600px;
+        text-align: left;
+      }
+
+      .modal-card h2 {
+        font-size: 22px;
+        color: var(--accent-cyan);
+        margin-bottom: 14px;
+        text-transform: uppercase;
+      }
+
+      .tutorial-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .tutorial-box {
+        background: #0d121c;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 12px;
+      }
+
+      .tutorial-box h3 {
+        font-size: 14px;
+        color: var(--accent-gold);
+        margin-bottom: 6px;
+      }
+
+      .tutorial-box p {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      .audio-btn {
+        pointer-events: auto;
+        background: #1c2638;
+        border: 1px solid var(--border-color);
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- In-Game HUD overlay -->
+      <div id="hud-overlay">
+        <div style="display: flex; justify-content: flex-end;">
+          <button id="mute-toggle-btn" class="audio-btn">🔊 SOUND: ON</button>
+        </div>
+        <div class="hud-bottom-bar">
+          <div class="controls-guide">
+            <div><span class="key-pill">A</span><span class="key-pill">D</span> Move</div>
+            <div><span class="key-pill">W</span> / <span class="key-pill">SPACE</span> Jump</div>
+            <div><span class="key-pill">Z</span> or <span class="key-pill">J</span> ✊ ROCK</div>
+            <div><span class="key-pill">X</span> or <span class="key-pill">K</span> ✋ PAPER</div>
+            <div><span class="key-pill">C</span> or <span class="key-pill">L</span> ✌ SCISSORS</div>
+          </div>
+          <div id="room-code-tag" style="font-family: monospace; font-size: 12px; color: var(--accent-gold);">
+            ROOM: ----
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen 1: Main Menu -->
+      <div id="screen-main-menu" class="ui-overlay">
+        <div class="ui-card">
+          <h1 class="brand-title">Rock Paper Scissors Boom</h1>
+          <p class="tagline">
+            Minimalist multiplayer platform fighting. Choose Rock, Paper, or Scissors. Launch opponents off the map. Don't get blown away!
+          </p>
+
+          <div class="form-group">
+            <label for="player-name-input">Fighter Nickname</label>
+            <input type="text" id="player-name-input" maxlength="16" placeholder="Enter nickname" />
+          </div>
+
+          <div class="form-group">
+            <label>Fighter Color</label>
+            <div class="color-picker" id="color-picker">
+              <div class="color-option selected" data-color="#00f0ff" style="background: #00f0ff;"></div>
+              <div class="color-option" data-color="#ff0055" style="background: #ff0055;"></div>
+              <div class="color-option" data-color="#ffcc00" style="background: #ffcc00;"></div>
+              <div class="color-option" data-color="#39ff14" style="background: #39ff14;"></div>
+              <div class="color-option" data-color="#9933ff" style="background: #9933ff;"></div>
+              <div class="color-option" data-color="#ff6600" style="background: #ff6600;"></div>
+            </div>
+          </div>
+
+          <!-- Solo Play vs AI -->
+          <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 13px; font-weight: bold; color: var(--accent-cyan);">🤖 Play Solo vs AI</span>
+              <select id="bot-difficulty-select" style="background: #0d121c; border: 1px solid var(--border-color); color: #fff; border-radius: 4px; padding: 4px 8px; font-size: 12px;">
+                <option value="easy">Easy (Trainee)</option>
+                <option value="medium" selected>Medium (Challenger)</option>
+                <option value="hard">Hard (Master)</option>
+              </select>
+            </div>
+            <button id="btn-solo-play" class="btn btn-primary" style="margin-bottom: 0;">🎮 Start Solo Match</button>
+          </div>
+
+          <button id="btn-quick-play" class="btn btn-secondary">⚡ Quick Play (Public Match)</button>
+          <button id="btn-create-private" class="btn btn-secondary">🔒 Create Private Room</button>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Join with Code</label>
+            <div class="join-group">
+              <input type="text" id="room-code-input" maxlength="6" placeholder="CODE" />
+              <button id="btn-join-code" class="btn btn-secondary">Join</button>
+            </div>
+          </div>
+
+          <button id="btn-how-to-play" class="btn btn-secondary" style="margin-top: 8px;">📖 How To Play (30s Tutorial)</button>
+
+          <div id="menu-ad-slot" style="margin-top: 14px;"></div>
+        </div>
+      </div>
+
+      <!-- Screen 2: Room Lobby -->
+      <div id="screen-lobby" class="ui-overlay hidden">
+        <div class="ui-card">
+          <h2 style="font-size: 20px; text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 4px;">Match Lobby</h2>
+          <p style="font-size: 12px; color: var(--text-muted);">Share this code with friends to fight:</p>
+          <div class="code-display" id="lobby-code-display">ABC12</div>
+          <button id="btn-copy-link" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px; margin-bottom: 16px;">📋 Copy Invite Link</button>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin-bottom: 0;">Fighters (2-4 Players)</label>
+            </div>
+            <div class="roster-list" id="lobby-roster"></div>
+          </div>
+
+          <!-- Add Bot in Lobby -->
+          <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+            <select id="lobby-bot-diff" style="flex: 1; background: #0d121c; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; padding: 8px 10px; font-size: 13px;">
+              <option value="easy">Bot: Easy (Trainee)</option>
+              <option value="medium" selected>Bot: Medium (Challenger)</option>
+              <option value="hard">Bot: Hard (Master)</option>
+            </select>
+            <button id="btn-add-bot" class="btn btn-secondary" style="width: auto; margin-bottom: 0; padding: 8px 14px; font-size: 12px;">+ Add Bot</button>
+          </div>
+
+          <button id="btn-ready-toggle" class="btn btn-primary">Ready Up</button>
+          <button id="btn-leave-lobby" class="btn btn-secondary">Leave Lobby</button>
+
+          <div id="lobby-ad-slot" style="margin-top: 14px;"></div>
+        </div>
+      </div>
+
+      <!-- Screen 3: Match Over / Victory -->
+      <div id="screen-game-over" class="ui-overlay hidden">
+        <div class="ui-card">
+          <h2 id="game-over-title" style="font-size: 26px; color: var(--accent-gold); margin-bottom: 8px;">VICTORY!</h2>
+          <p id="game-over-desc" style="color: var(--text-muted); font-size: 14px; margin-bottom: 18px;"></p>
+
+          <div id="game-over-stats" style="background: #0d121c; padding: 12px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; text-align: left; line-height: 1.6;">
+            <div>💥 <strong>Damage Dealt:</strong> <span id="stat-damage">0</span>%</div>
+            <div>🎯 <strong>Knockouts (KOs):</strong> <span id="stat-kos">0</span></div>
+            <div>⚡ <strong>Clashes Won / Lost / Tied:</strong> <span id="stat-clashes">0 / 0 / 0</span></div>
+          </div>
+
+          <button id="btn-rematch" class="btn btn-primary">⚔️ Rematch</button>
+          <button id="btn-return-menu" class="btn btn-secondary">Return to Menu</button>
+        </div>
+      </div>
+
+      <!-- Screen 4: Tutorial Modal -->
+      <div id="screen-tutorial" class="ui-overlay hidden">
+        <div class="ui-card modal-card">
+          <h2>How to Play in 30 Seconds</h2>
+          <div class="tutorial-grid">
+            <div class="tutorial-box">
+              <h3>1. The RPS Triangle</h3>
+              <p>
+                ✊ <strong>Rock</strong> beats ✌ <strong>Scissors</strong><br/>
+                ✌ <strong>Scissors</strong> beats ✋ <strong>Paper</strong><br/>
+                ✋ <strong>Paper</strong> beats ✊ <strong>Rock</strong>
+              </p>
+            </div>
+            <div class="tutorial-box">
+              <h3>2. Clash or Recoil</h3>
+              <p>
+                Attack simultaneously! Winning attack inflicts full damage & launches the opponent. Ties bounce both fighters away safely with 0 damage.
+              </p>
+            </div>
+            <div class="tutorial-box">
+              <h3>3. Damage = Knockback</h3>
+              <p>
+                The more damage % you accumulate, the farther attacks launch you! At 100%+, a single clean hit will send you flying.
+              </p>
+            </div>
+            <div class="tutorial-box">
+              <h3>4. Blast Zones & Lives</h3>
+              <p>
+                Knock opponents off the arena perimeter into blast zones to take a life. Each fighter has 3 lives. Last fighter standing wins!
+              </p>
+            </div>
+          </div>
+          <button id="btn-close-tutorial" class="btn btn-primary">Got It! Let's Fight</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
